@@ -1,0 +1,39 @@
+{
+  "extName": { "message": "HistSieve 历史筛除" },
+  "extDesc": {
+    "message": "按关键词实时清除浏览器历史；可定时或在浏览器启动时自动清理。"
+  },
+  "optionsTitle": { "message": "HistSieve 设置" },
+
+  "popupToggleEnabled": { "message": "启用 / 禁用 HistSieve" },
+  "popupKeywordCount": { "message": "生效关键词" },
+  "popupLastClean": { "message": "上次清理" },
+  "popupCleanNow": { "message": "立即清理" },
+  "popupCleaning": { "message": "清理中…" },
+  "popupCleanedOk": { "message": "已完成。" },
+  "popupCleanedFail": { "message": "清理失败。" },
+  "popupOpenSettings": { "message": "设置" },
+  "popupNever": { "message": "从未" },
+
+  "sectionKeywords": { "message": "关键词规则" },
+  "hintKeywords": {
+    "message": "当访问的网址或页面标题包含任一生效关键词时，立即从浏览器历史中删除该记录。匹配不区分大小写。"
+  },
+  "phKeyword": { "message": "例如：youtube.com" },
+  "btnAdd": { "message": "添加" },
+  "btnDelete": { "message": "删除" },
+  "kwEmpty": { "message": "尚未添加关键词。" },
+  "hintClickToEdit": { "message": "点击编辑" },
+
+  "sectionCleanup": { "message": "定期清理" },
+  "cfgIntervalEnabled": { "message": "按计划清理" },
+  "cfgIntervalHours": { "message": "每隔" },
+  "cfgHours": { "message": "小时" },
+  "cfgOnStartup": { "message": "浏览器启动时清理一次" },
+  "cfgScope": { "message": "清理范围" },
+  "cfgScopeOlder": { "message": "仅删除早于" },
+  "cfgScopeAll": { "message": "全部历史记录" },
+  "cfgDays": { "message": "天的记录" },
+
+  "statusSaved": { "message": "已保存" }
+}

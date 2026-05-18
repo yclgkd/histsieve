@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title data-i18n="extName">HistSieve</title>
+    <link rel="stylesheet" href="./popup.css" />
+  </head>
+  <body>
+    <main class="popup">
+      <header class="popup__header">
+        <h1 class="popup__title" data-i18n="extName">HistSieve</h1>
+        <label class="switch" title="" data-i18n-title="popupToggleEnabled">
+          <input id="enabled" type="checkbox" />
+          <span class="slider"></span>
+        </label>
+      </header>
+
+      <section class="popup__status">
+        <div class="row">
+          <span class="label" data-i18n="popupKeywordCount">Keywords</span>
+          <span id="kwCount" class="value">0</span>
+        </div>
+        <div class="row">
+          <span class="label" data-i18n="popupLastClean">Last cleanup</span>
+          <span id="lastClean" class="value">—</span>
+        </div>
+      </section>
+
+      <button id="cleanNow" class="primary" data-i18n="popupCleanNow">Clean now</button>
+      <div id="cleanResult" class="popup__result" aria-live="polite"></div>
+
+      <footer class="popup__footer">
+        <a href="#" id="openOptions" data-i18n="popupOpenSettings">Settings</a>
+      </footer>
+    </main>
+    <script type="module" src="./popup.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,39 @@
+{
+  "extName": { "message": "HistSieve" },
+  "extDesc": {
+    "message": "Wipe browser history by keyword in real time, and on a schedule or at browser startup."
+  },
+  "optionsTitle": { "message": "HistSieve Settings" },
+
+  "popupToggleEnabled": { "message": "Enable / disable HistSieve" },
+  "popupKeywordCount": { "message": "Active keywords" },
+  "popupLastClean": { "message": "Last cleanup" },
+  "popupCleanNow": { "message": "Clean now" },
+  "popupCleaning": { "message": "Cleaning…" },
+  "popupCleanedOk": { "message": "Done." },
+  "popupCleanedFail": { "message": "Cleanup failed." },
+  "popupOpenSettings": { "message": "Settings" },
+  "popupNever": { "message": "Never" },
+
+  "sectionKeywords": { "message": "Keyword rules" },
+  "hintKeywords": {
+    "message": "When a visited URL or page title contains any active keyword, the entry is removed from your browser history immediately. Matching is case-insensitive."
+  },
+  "phKeyword": { "message": "e.g. youtube.com" },
+  "btnAdd": { "message": "Add" },
+  "btnDelete": { "message": "Delete" },
+  "kwEmpty": { "message": "No keywords yet." },
+  "hintClickToEdit": { "message": "Click to edit" },
+
+  "sectionCleanup": { "message": "Scheduled cleanup" },
+  "cfgIntervalEnabled": { "message": "Run on a schedule" },
+  "cfgIntervalHours": { "message": "Every" },
+  "cfgHours": { "message": "hours" },
+  "cfgOnStartup": { "message": "Run when the browser starts" },
+  "cfgScope": { "message": "Cleanup scope" },
+  "cfgScopeOlder": { "message": "Only entries older than" },
+  "cfgScopeAll": { "message": "All history" },
+  "cfgDays": { "message": "days" },
+
+  "statusSaved": { "message": "Saved" }
+}

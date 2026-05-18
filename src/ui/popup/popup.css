@@ -1,0 +1,133 @@
+:root {
+  --bg: #ffffff;
+  --fg: #111827;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --on-bg: #10b981;
+  --off-bg: #d1d5db;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f172a;
+    --fg: #f3f4f6;
+    --muted: #9ca3af;
+    --border: #1f2937;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+  color: var(--fg);
+  background: var(--bg);
+  width: 300px;
+}
+
+.popup {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.popup__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.popup__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.popup__status {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 6px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .popup__status { background: rgba(255, 255, 255, 0.05); }
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.label { color: var(--muted); }
+.value { font-weight: 500; }
+
+.primary {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.primary:hover:not(:disabled) { background: var(--primary-hover); }
+.primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.popup__result {
+  font-size: 12px;
+  color: var(--muted);
+  min-height: 14px;
+}
+
+.popup__footer {
+  text-align: right;
+  font-size: 12px;
+}
+
+.popup__footer a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.popup__footer a:hover { text-decoration: underline; }
+
+/* Toggle switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+}
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider {
+  position: absolute; cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: var(--off-bg);
+  transition: 0.2s;
+  border-radius: 20px;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 16px; width: 16px;
+  left: 2px; bottom: 2px;
+  background-color: white;
+  transition: 0.2s;
+  border-radius: 50%;
+}
+.switch input:checked + .slider { background-color: var(--on-bg); }
+.switch input:checked + .slider:before { transform: translateX(16px); }
