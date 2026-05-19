@@ -51,6 +51,13 @@ jobs:
       - name: Build release zip
         run: pnpm build:release
 
+      - name: Upload zip as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: histsieve-v${{ env.version }}
+          path: release/histsieve-v${{ env.version }}.zip
+          if-no-files-found: error
+
       - name: Extract release notes from CHANGELOG
         id: notes
         run: |
