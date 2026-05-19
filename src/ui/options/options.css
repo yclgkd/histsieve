@@ -52,6 +52,20 @@ body {
   font-weight: 600;
 }
 
+.enable-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.enable-toggle__label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--fg);
+}
+
 .card {
   background: var(--surface);
   border: 1px solid var(--border);

@@ -6,6 +6,7 @@
   "optionsTitle": { "message": "HistSieve 设置" },
 
   "popupToggleEnabled": { "message": "启用 / 禁用 HistSieve" },
+  "lblEnableToggle": { "message": "启用 HistSieve" },
   "popupKeywordCount": { "message": "生效关键词" },
   "popupLastClean": { "message": "上次清理" },
   "popupCleaning": { "message": "清理中…" },
