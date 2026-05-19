@@ -33,7 +33,9 @@
   "btnDelete": { "message": "删除" },
   "btnExport": { "message": "导出" },
   "btnImport": { "message": "导入" },
-  "kwEmpty": { "message": "尚未添加关键词。" },
+  "kwEmpty": {
+    "message": "还没有关键词 —— 在上方添加第一个吧。例如 youtube.com、reddit.com，或任何你不想留在历史里的词。"
+  },
   "hintClickToEdit": { "message": "点击编辑" },
 
   "importPrompt": {

@@ -155,8 +155,12 @@ body {
 .empty {
   color: var(--muted);
   text-align: center;
-  padding: 12px 0;
+  padding: 16px 12px;
   margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  max-width: 480px;
+  align-self: center;
 }
 
 .hidden { display: none; }

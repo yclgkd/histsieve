@@ -33,7 +33,9 @@
   "btnDelete": { "message": "Delete" },
   "btnExport": { "message": "Export" },
   "btnImport": { "message": "Import" },
-  "kwEmpty": { "message": "No keywords yet." },
+  "kwEmpty": {
+    "message": "No keywords yet — add your first one above. Try youtube.com, reddit.com, or any word you'd like wiped from history."
+  },
   "hintClickToEdit": { "message": "Click to edit" },
 
   "importPrompt": {

@@ -39,9 +39,12 @@ chrome.history.onVisited.addListener((item) => {
   );
 });
 
-chrome.runtime.onInstalled.addListener(async () => {
+chrome.runtime.onInstalled.addListener(async (details) => {
   cachedSettings = await loadSettings();
   await syncAlarms(cachedSettings, { createAlarm, clearAlarm });
+  if (details.reason === "install") {
+    void chrome.runtime.openOptionsPage();
+  }
 });
 
 chrome.runtime.onStartup.addListener(async () => {
