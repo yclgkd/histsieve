@@ -1,0 +1,73 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish GitHub Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify tag matches package.json version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pkg=$(node -p "require('./package.json').version")
+          if [ "$tag" != "$pkg" ]; then
+            echo "Tag v$tag does not match package.json version $pkg" >&2
+            exit 1
+          fi
+          echo "version=$pkg" >> "$GITHUB_ENV"
+
+      - name: Biome check
+        run: pnpm check:ci
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build release zip
+        run: pnpm build:release
+
+      - name: Extract release notes from CHANGELOG
+        id: notes
+        run: |
+          awk -v ver="$version" '
+            $0 ~ "^## "ver"( |$)" { capture=1; next }
+            capture && /^## / { exit }
+            capture { print }
+          ' CHANGELOG.md > RELEASE_NOTES.md
+          if [ ! -s RELEASE_NOTES.md ]; then
+            echo "No CHANGELOG entry found for $version" >&2
+            exit 1
+          fi
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: v${{ env.version }}
+          body_path: RELEASE_NOTES.md
+          files: release/histsieve-v${{ env.version }}.zip
+          fail_on_unmatched_files: true
