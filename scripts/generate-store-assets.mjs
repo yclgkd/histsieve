@@ -280,7 +280,7 @@ function popupDocument() {
     <title>HistSieve</title>
     <style>
 ${popupCss}
-      body { height: 245px; overflow: hidden; }
+      body { height: 276px; overflow: hidden; }
     </style>
   </head>
   <body>
@@ -326,7 +326,7 @@ function iframe(srcdoc, width, height) {
 }
 
 function popupScreenshotDocument() {
-  const popup = iframe(popupDocument(), 320, 245);
+  const popup = iframe(popupDocument(), 320, 276);
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -428,7 +428,7 @@ function popupScreenshotDocument() {
         top: 132px;
         right: 132px;
         width: 320px;
-        height: 245px;
+        height: 276px;
         border-radius: 14px;
         overflow: hidden;
         background: #ffffff;
@@ -541,7 +541,7 @@ function smallPromoDocument() {
 
 function marqueeDocument() {
   const options = iframe(optionsDocument({ frame: true }), 760, 740);
-  const popup = iframe(popupDocument(), 320, 245);
+  const popup = iframe(popupDocument(), 320, 276);
   const logo = iconSvg();
   return `<!doctype html>
 <html lang="en">
@@ -562,7 +562,7 @@ function marqueeDocument() {
         position: absolute;
         left: 96px;
         top: 98px;
-        width: 430px;
+        width: 390px;
       }
       .logo {
         width: 96px;
@@ -589,9 +589,9 @@ function marqueeDocument() {
       .options-shot {
         position: absolute;
         top: 42px;
-        right: 78px;
-        width: 614px;
-        height: 482px;
+        right: 44px;
+        width: 524px;
+        height: 370px;
         overflow: hidden;
         border: 1px solid #d9e2ec;
         border-radius: 18px;
@@ -601,15 +601,15 @@ function marqueeDocument() {
       .options-shot > div {
         width: 760px;
         height: 740px;
-        transform: scale(.81);
+        transform: scale(.69);
         transform-origin: top left;
       }
       .popup-shot {
         position: absolute;
-        right: 610px;
-        bottom: 44px;
+        right: 570px;
+        bottom: 40px;
         width: 320px;
-        height: 245px;
+        height: 276px;
         overflow: hidden;
         border-radius: 14px;
         background: #ffffff;
@@ -622,7 +622,7 @@ function marqueeDocument() {
     <section class="copy">
       <div class="logo">${logo}</div>
       <h1>HistSieve</h1>
-      <p>Local Chrome history cleanup by keyword, schedule, or age.</p>
+      <p>Local Chrome history cleanup<br />by keyword, schedule, or age.</p>
     </section>
     <div class="options-shot"><div>${options}</div></div>
     <div class="popup-shot">${popup}</div>

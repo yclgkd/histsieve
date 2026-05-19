@@ -50,8 +50,7 @@ pnpm build:release
 `pnpm assets:store` renders product screenshots with local Chrome and uses `sips`
 for icon PNGs. Set `CHROME_PATH` if Chrome is not installed in the default location.
 
-The upload package is generated under `release/`. Store listing copy and submission
-notes are in [docs/chrome-web-store-listing.md](./docs/chrome-web-store-listing.md).
+The upload package is generated under `release/`.
 
 ## Manual Test Checklist
 
