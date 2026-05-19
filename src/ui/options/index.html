@@ -17,29 +17,6 @@
       </header>
 
       <section class="card">
-        <h2 data-i18n="sectionKeywords">Keyword rules</h2>
-        <p class="hint" data-i18n="hintKeywords">
-          When a visited URL or page title contains any active keyword, the entry is removed from
-          your browser history immediately. Matching is case-insensitive.
-        </p>
-
-        <form id="kwForm" class="kw-form">
-          <input
-            id="kwInput"
-            type="text"
-            data-i18n-placeholder="phKeyword"
-            placeholder="e.g. youtube.com"
-            maxlength="200"
-            required
-          />
-          <button type="submit" class="primary" data-i18n="btnAdd">Add</button>
-        </form>
-
-        <ul id="kwList" class="kw-list" aria-live="polite"></ul>
-        <p id="kwEmpty" class="empty hidden" data-i18n="kwEmpty">No keywords yet.</p>
-      </section>
-
-      <section class="card">
         <h2 data-i18n="sectionCleanup">Scheduled cleanup</h2>
 
         <label class="row">
@@ -79,6 +56,29 @@
 
         <button id="cleanNow" class="primary" type="button"></button>
         <div id="cleanResult" class="hint" aria-live="polite"></div>
+      </section>
+
+      <section class="card">
+        <h2 data-i18n="sectionKeywords">Keyword rules</h2>
+        <p class="hint" data-i18n="hintKeywords">
+          When a visited URL or page title contains any active keyword, the entry is removed from
+          your browser history immediately. Matching is case-insensitive.
+        </p>
+
+        <form id="kwForm" class="kw-form">
+          <input
+            id="kwInput"
+            type="text"
+            data-i18n-placeholder="phKeyword"
+            placeholder="e.g. youtube.com"
+            maxlength="200"
+            required
+          />
+          <button type="submit" class="primary" data-i18n="btnAdd">Add</button>
+        </form>
+
+        <ul id="kwList" class="kw-list" aria-live="polite"></ul>
+        <p id="kwEmpty" class="empty hidden" data-i18n="kwEmpty">No keywords yet.</p>
       </section>
 
       <div id="saveStatus" class="save-status" aria-live="polite"></div>
