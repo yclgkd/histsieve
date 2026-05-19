@@ -15,10 +15,7 @@ function isHttpUrl(url: string): boolean {
   return url.startsWith("http://") || url.startsWith("https://");
 }
 
-export async function handleVisit(
-  visit: VisitItem,
-  deps: KeywordWatcherDeps,
-): Promise<void> {
+export async function handleVisit(visit: VisitItem, deps: KeywordWatcherDeps): Promise<void> {
   if (!isHttpUrl(visit.url)) return;
 
   const settings = await deps.getSettings();

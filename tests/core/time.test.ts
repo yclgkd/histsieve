@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { daysToMs, hoursToMinutes, ageCutoff } from "@/core/time";
+import { ageCutoff, daysToMs, hoursToMinutes } from "@/core/time";
 
 describe("daysToMs", () => {
   it("converts days to milliseconds", () => {

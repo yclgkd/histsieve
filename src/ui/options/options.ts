@@ -1,4 +1,3 @@
-import { loadSettings, saveSettings, onSettingsChanged } from "@/platform/chrome";
 import {
   addKeyword,
   exportKeywords,
@@ -11,9 +10,10 @@ import {
   updateKeywordValue,
 } from "@/core/settings";
 import type { CleanupScope, Keyword, Settings } from "@/core/types";
-import { applyI18n, t } from "@/ui/shared/i18n";
-import { formatTimestamp } from "@/ui/shared/format";
+import { loadSettings, onSettingsChanged, saveSettings } from "@/platform/chrome";
 import { attachCleanButton, type CleanButtonHandle } from "@/ui/shared/clean-button";
+import { formatTimestamp } from "@/ui/shared/format";
+import { applyI18n, t } from "@/ui/shared/i18n";
 import pkg from "../../../package.json";
 
 const $ = <T extends Element>(sel: string): T => {
@@ -175,9 +175,7 @@ function wireCleanupInputs(): void {
   });
 
   $<HTMLInputElement>("#onStartup").addEventListener("change", async (e) => {
-    await commit(
-      setCleanupConfig(settings, { onStartup: (e.target as HTMLInputElement).checked }),
-    );
+    await commit(setCleanupConfig(settings, { onStartup: (e.target as HTMLInputElement).checked }));
   });
 
   $<HTMLInputElement>("#olderThanDays").addEventListener("change", async (e) => {
@@ -238,9 +236,7 @@ async function handleImportFile(file: File): Promise<void> {
 
   const existing = settings.keywords.length;
   if (existing > 0) {
-    const ok = window.confirm(
-      t("importReplaceConfirm", [String(existing), String(parsed.length)]),
-    );
+    const ok = window.confirm(t("importReplaceConfirm", [String(existing), String(parsed.length)]));
     if (!ok) return;
   }
   await commit(replaceKeywords(settings, parsed));

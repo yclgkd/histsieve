@@ -1,17 +1,17 @@
 import { describe, expect, it } from "vitest";
 import {
-  DEFAULT_SETTINGS,
   addKeyword,
+  DEFAULT_SETTINGS,
+  exportKeywords,
+  isValidKeywordValue,
+  mergeKeywords,
+  parseKeywordsExport,
   removeKeyword,
+  replaceKeywords,
+  setCleanupConfig,
   setKeywordEnabled,
   updateKeywordValue,
   validateSettings,
-  setCleanupConfig,
-  isValidKeywordValue,
-  exportKeywords,
-  parseKeywordsExport,
-  mergeKeywords,
-  replaceKeywords,
 } from "@/core/settings";
 import type { Keyword, Settings } from "@/core/types";
 
@@ -225,9 +225,7 @@ describe("parseKeywordsExport", () => {
   });
 
   it("throws on wrong type marker", () => {
-    expect(() =>
-      parseKeywordsExport({ type: "other.thing", version: 1, keywords: [] }),
-    ).toThrow();
+    expect(() => parseKeywordsExport({ type: "other.thing", version: 1, keywords: [] })).toThrow();
   });
 
   it("throws on unsupported version", () => {
@@ -237,9 +235,7 @@ describe("parseKeywordsExport", () => {
   });
 
   it("throws when keywords is missing or not an array", () => {
-    expect(() =>
-      parseKeywordsExport({ type: "histsieve.keywords", version: 1 }),
-    ).toThrow();
+    expect(() => parseKeywordsExport({ type: "histsieve.keywords", version: 1 })).toThrow();
     expect(() =>
       parseKeywordsExport({ type: "histsieve.keywords", version: 1, keywords: "x" }),
     ).toThrow();

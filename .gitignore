@@ -1,6 +1,8 @@
 node_modules
 dist
 coverage
+release
+store-assets/source
 .DS_Store
 *.log
 .vite

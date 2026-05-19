@@ -1,5 +1,5 @@
-import type { CleanupConfig, Keyword, Settings } from "./types";
 import { normalizeKeywordValue } from "./matcher";
+import type { CleanupConfig, Keyword, Settings } from "./types";
 
 export const DEFAULT_SETTINGS: Settings = Object.freeze({
   enabled: true,
@@ -51,7 +51,8 @@ function sanitizeCleanup(input: unknown): CleanupConfig {
   if (input === null || typeof input !== "object") return { ...def };
   const c = input as Partial<CleanupConfig>;
   return {
-    intervalEnabled: typeof c.intervalEnabled === "boolean" ? c.intervalEnabled : def.intervalEnabled,
+    intervalEnabled:
+      typeof c.intervalEnabled === "boolean" ? c.intervalEnabled : def.intervalEnabled,
     intervalHours: clampInt(c.intervalHours, MIN_INTERVAL_HOURS, def.intervalHours),
     onStartup: typeof c.onStartup === "boolean" ? c.onStartup : def.onStartup,
     scope: c.scope === "all" || c.scope === "olderThan" ? c.scope : def.scope,
@@ -65,9 +66,7 @@ export function validateSettings(input: unknown): Settings {
   }
   const s = input as Partial<Settings>;
   const keywordsRaw = Array.isArray(s.keywords) ? s.keywords : [];
-  const keywords = keywordsRaw
-    .map(sanitizeKeyword)
-    .filter((k): k is Keyword => k !== null);
+  const keywords = keywordsRaw.map(sanitizeKeyword).filter((k): k is Keyword => k !== null);
 
   return {
     enabled: typeof s.enabled === "boolean" ? s.enabled : DEFAULT_SETTINGS.enabled,
@@ -92,9 +91,7 @@ export function addKeyword(settings: Settings, value: string): Settings {
   if (trimmed.length === 0) return settings;
 
   const normalizedNew = normalizeKeywordValue(trimmed);
-  const exists = settings.keywords.some(
-    (k) => normalizeKeywordValue(k.value) === normalizedNew,
-  );
+  const exists = settings.keywords.some((k) => normalizeKeywordValue(k.value) === normalizedNew);
   if (exists) return settings;
 
   const newKeyword: Keyword = {
@@ -123,10 +120,7 @@ export function updateKeywordValue(settings: Settings, id: string, value: string
   return { ...settings, keywords: next };
 }
 
-export function setCleanupConfig(
-  settings: Settings,
-  patch: Partial<CleanupConfig>,
-): Settings {
+export function setCleanupConfig(settings: Settings, patch: Partial<CleanupConfig>): Settings {
   const merged = sanitizeCleanup({ ...settings.cleanup, ...patch });
   return { ...settings, cleanup: merged };
 }
@@ -185,9 +179,7 @@ export function parseKeywordsExport(raw: unknown): Keyword[] {
   if (!Array.isArray(payload.keywords)) {
     throw new Error("Invalid file: missing keywords array.");
   }
-  return payload.keywords
-    .map(sanitizeImportedKeyword)
-    .filter((k): k is Keyword => k !== null);
+  return payload.keywords.map(sanitizeImportedKeyword).filter((k): k is Keyword => k !== null);
 }
 
 export function mergeKeywords(settings: Settings, incoming: ReadonlyArray<Keyword>): MergeResult {

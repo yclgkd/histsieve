@@ -1,5 +1,5 @@
-import type { Settings } from "@/core/types";
 import { hoursToMinutes } from "@/core/time";
+import type { Settings } from "@/core/types";
 
 export const ALARM_NAME = "histsieve-cleanup";
 

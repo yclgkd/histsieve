@@ -1,11 +1,11 @@
-import type { Settings } from "@/core/types";
 import { DEFAULT_SETTINGS, validateSettings } from "@/core/settings";
+import type { Settings } from "@/core/types";
 
 const SETTINGS_KEY = "histsieve.settings.v1";
 
 export type StorageArea = "sync" | "local";
 
-const STORAGE_AREA: StorageArea = "sync";
+const STORAGE_AREA: StorageArea = "local";
 
 function storage() {
   return chrome.storage[STORAGE_AREA];
@@ -60,4 +60,4 @@ export async function clearAlarm(name: string): Promise<void> {
   await chrome.alarms.clear(name);
 }
 
-export { SETTINGS_KEY, DEFAULT_SETTINGS };
+export { DEFAULT_SETTINGS, SETTINGS_KEY };

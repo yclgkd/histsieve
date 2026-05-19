@@ -1,7 +1,7 @@
-import { defineConfig } from "vite";
-import { crx } from "@crxjs/vite-plugin";
-import manifest from "./src/manifest.config";
 import { fileURLToPath } from "node:url";
+import { crx } from "@crxjs/vite-plugin";
+import { defineConfig } from "vite";
+import manifest from "./src/manifest.config";
 
 export default defineConfig({
   plugins: [crx({ manifest })],
@@ -12,7 +12,7 @@ export default defineConfig({
   },
   build: {
     outDir: "dist",
-    sourcemap: true,
+    sourcemap: process.env.HISTSIEVE_RELEASE !== "1",
     emptyOutDir: true,
   },
 });

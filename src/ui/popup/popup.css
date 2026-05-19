@@ -30,7 +30,9 @@
   }
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 body {
   width: 320px;
@@ -160,7 +162,10 @@ input:focus-visible {
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.15s, box-shadow 0.15s, transform 0.15s;
+  transition:
+    background 0.15s,
+    box-shadow 0.15s,
+    transform 0.15s;
 }
 
 .primary:hover:not(:disabled) {
@@ -177,29 +182,51 @@ input:focus-visible {
   cursor: not-allowed;
 }
 
-.primary.danger { background: var(--danger); }
-.primary.danger:hover:not(:disabled) { background: var(--danger-hover); }
+.primary.danger {
+  background: var(--danger);
+}
+.primary.danger:hover:not(:disabled) {
+  background: var(--danger-hover);
+}
 .primary.confirming {
   background: var(--warning);
   animation: pulse 1.2s ease-in-out infinite;
 }
-.primary.confirming:hover { background: #b45309; }
-.primary.busy { background: #667085; cursor: wait; }
+.primary.confirming:hover {
+  background: #b45309;
+}
+.primary.busy {
+  background: #667085;
+  cursor: wait;
+}
 .primary.success {
   background: var(--success);
   animation: pop 0.25s ease-out;
 }
-.primary.error { background: var(--danger); }
+.primary.error {
+  background: var(--danger);
+}
 
 @keyframes pop {
-  0% { transform: scale(0.98); }
-  60% { transform: scale(1.02); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(0.98);
+  }
+  60% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 @keyframes pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.42); }
-  50% { box-shadow: 0 0 0 7px rgba(217, 119, 6, 0); }
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.42);
+  }
+  50% {
+    box-shadow: 0 0 0 7px rgba(217, 119, 6, 0);
+  }
 }
 
 .ghost {
@@ -217,7 +244,10 @@ input:focus-visible {
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  transition:
+    border-color 0.15s,
+    color 0.15s,
+    background 0.15s;
 }
 
 .ghost:hover {
@@ -272,5 +302,9 @@ input:focus-visible {
   box-shadow: 0 2px 6px rgba(15, 23, 42, 0.22);
   transition: transform 0.2s;
 }
-.switch input:checked + .slider { background-color: var(--success); }
-.switch input:checked + .slider:before { transform: translateX(16px); }
+.switch input:checked + .slider {
+  background-color: var(--success);
+}
+.switch input:checked + .slider:before {
+  transform: translateX(16px);
+}

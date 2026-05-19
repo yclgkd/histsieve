@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { syncAlarms, ALARM_NAME } from "@/background/scheduler";
+import { describe, expect, it, vi } from "vitest";
+import { ALARM_NAME, syncAlarms } from "@/background/scheduler";
 import { DEFAULT_SETTINGS, setCleanupConfig } from "@/core/settings";
 import { hoursToMinutes } from "@/core/time";
 

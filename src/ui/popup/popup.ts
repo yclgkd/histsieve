@@ -1,8 +1,8 @@
-import { loadSettings, saveSettings, onSettingsChanged } from "@/platform/chrome";
-import { applyI18n, t } from "@/ui/shared/i18n";
-import { formatTimestamp } from "@/ui/shared/format";
-import { attachCleanButton, type CleanButtonHandle } from "@/ui/shared/clean-button";
 import type { Settings } from "@/core/types";
+import { loadSettings, onSettingsChanged, saveSettings } from "@/platform/chrome";
+import { attachCleanButton, type CleanButtonHandle } from "@/ui/shared/clean-button";
+import { formatTimestamp } from "@/ui/shared/format";
+import { applyI18n, t } from "@/ui/shared/i18n";
 
 const $ = <T extends Element>(sel: string): T => {
   const el = document.querySelector<T>(sel);

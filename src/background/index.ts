@@ -1,6 +1,8 @@
+import { withLastCleanAt } from "@/core/settings";
+import type { Settings } from "@/core/types";
 import {
-  createAlarm,
   clearAlarm,
+  createAlarm,
   deleteAllHistory,
   deleteHistoryRange,
   deleteHistoryUrl,
@@ -9,11 +11,10 @@ import {
   saveSettings,
   searchHistory,
 } from "@/platform/chrome";
-import { handleVisit } from "./keyword-watcher";
 import { runCleanup } from "./cleaner";
+import { handleVisit } from "./keyword-watcher";
+import { handleRuntimeMessage } from "./messages";
 import { ALARM_NAME, syncAlarms } from "./scheduler";
-import type { Settings } from "@/core/types";
-import { withLastCleanAt } from "@/core/settings";
 
 let cachedSettings: Settings | null = null;
 
@@ -61,12 +62,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 });
 
 chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
-  if (!isRequest(message)) return false;
-  if (message.type === "histsieve.cleanNow") {
-    void executeCleanup().then((result) => sendResponse({ ok: true, ...result }));
-    return true;
-  }
-  return false;
+  return handleRuntimeMessage(message, { executeCleanup }, sendResponse);
 });
 
 async function executeCleanup(): Promise<{ cleanedAt: number | null; deletedByKeyword: number }> {
@@ -84,15 +80,4 @@ async function executeCleanup(): Promise<{ cleanedAt: number | null; deletedByKe
     await saveSettings(updated);
   }
   return result;
-}
-
-type Request = { type: "histsieve.cleanNow" };
-
-function isRequest(value: unknown): value is Request {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "type" in value &&
-    typeof (value as { type: unknown }).type === "string"
-  );
 }

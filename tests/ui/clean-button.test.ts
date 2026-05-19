@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_SETTINGS, setCleanupConfig } from "@/core/settings";
 import { attachCleanButton, getCleanButtonText } from "@/ui/shared/clean-button";

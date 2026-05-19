@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { handleVisit } from "@/background/keyword-watcher";
-import { DEFAULT_SETTINGS, addKeyword } from "@/core/settings";
+import { addKeyword, DEFAULT_SETTINGS } from "@/core/settings";
 import type { Settings } from "@/core/types";
 
 const settingsWith = (...keywords: string[]): Settings =>

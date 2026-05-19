@@ -1,14 +1,12 @@
 import { matchesAnyKeyword } from "@/core/matcher";
-import type { Settings } from "@/core/types";
 import { ageCutoff } from "@/core/time";
+import type { Settings } from "@/core/types";
 
 export type CleanerDeps = {
   deleteAll: () => Promise<void>;
   deleteRange: (startTime: number, endTime: number) => Promise<void>;
   deleteUrl: (url: string) => Promise<void>;
-  searchHistory: (
-    query: chrome.history.HistoryQuery,
-  ) => Promise<chrome.history.HistoryItem[]>;
+  searchHistory: (query: chrome.history.HistoryQuery) => Promise<chrome.history.HistoryItem[]>;
   now: () => number;
 };
 
@@ -19,10 +17,7 @@ export type CleanupResult = {
 
 const SWEEP_MAX_RESULTS = 1000;
 
-export async function runCleanup(
-  settings: Settings,
-  deps: CleanerDeps,
-): Promise<CleanupResult> {
+export async function runCleanup(settings: Settings, deps: CleanerDeps): Promise<CleanupResult> {
   if (!settings.enabled) {
     return { cleanedAt: null, deletedByKeyword: 0 };
   }

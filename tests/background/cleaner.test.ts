@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { runCleanup } from "@/background/cleaner";
-import { DEFAULT_SETTINGS, addKeyword, setCleanupConfig } from "@/core/settings";
+import { addKeyword, DEFAULT_SETTINGS, setCleanupConfig } from "@/core/settings";
 import { daysToMs } from "@/core/time";
 
 const NOW = 1_700_000_000_000;

@@ -1,10 +1,11 @@
-import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
+import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import type { Settings } from "@/core/types";
 
-type AnyMock = Mock<any[], any>;
+type AnyMock = Mock;
 
 type ChromeMock = {
   storage: {
+    local: { get: AnyMock; set: AnyMock };
     sync: { get: AnyMock; set: AnyMock };
     onChanged: { addListener: AnyMock; removeListener: AnyMock };
   };
@@ -20,6 +21,7 @@ type ChromeMock = {
 const installChromeMock = (): ChromeMock => {
   const mock: ChromeMock = {
     storage: {
+      local: { get: vi.fn(async () => ({})), set: vi.fn(async () => {}) },
       sync: { get: vi.fn(async () => ({})), set: vi.fn(async () => {}) },
       onChanged: { addListener: vi.fn(), removeListener: vi.fn() },
     },
@@ -52,7 +54,7 @@ describe("platform/chrome", () => {
 
   it("loadSettings parses stored value", async () => {
     const stored: Partial<Settings> = { enabled: false };
-    mock.storage.sync.get.mockResolvedValueOnce({ "histsieve.settings.v1": stored });
+    mock.storage.local.get.mockResolvedValueOnce({ "histsieve.settings.v1": stored });
     const mod = await import("@/platform/chrome");
     const s = await mod.loadSettings();
     expect(s.enabled).toBe(false);
@@ -72,8 +74,9 @@ describe("platform/chrome", () => {
       },
       lastCleanAt: null,
     });
-    expect(mock.storage.sync.set).toHaveBeenCalledTimes(1);
-    const arg = mock.storage.sync.set.mock.calls[0]![0] as Record<string, unknown>;
+    expect(mock.storage.local.set).toHaveBeenCalledTimes(1);
+    expect(mock.storage.sync.set).not.toHaveBeenCalled();
+    const arg = mock.storage.local.set.mock.calls[0]![0] as Record<string, unknown>;
     expect(Object.keys(arg)).toEqual(["histsieve.settings.v1"]);
   });
 
@@ -87,10 +90,7 @@ describe("platform/chrome", () => {
       area: string,
     ) => void;
 
-    listener(
-      { "histsieve.settings.v1": { newValue: { enabled: false } } },
-      "sync",
-    );
+    listener({ "histsieve.settings.v1": { newValue: { enabled: false } } }, "local");
     expect(handler).toHaveBeenCalledOnce();
     expect(handler.mock.calls[0]![0].enabled).toBe(false);
   });
@@ -104,8 +104,8 @@ describe("platform/chrome", () => {
       area: string,
     ) => void;
 
-    listener({ other: { newValue: 1 } }, "sync");
-    listener({ "histsieve.settings.v1": { newValue: {} } }, "local");
+    listener({ other: { newValue: 1 } }, "local");
+    listener({ "histsieve.settings.v1": { newValue: {} } }, "sync");
     expect(handler).not.toHaveBeenCalled();
   });
 
