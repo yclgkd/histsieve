@@ -45,8 +45,7 @@ async function init(): Promise<void> {
     },
   });
 
-  $<HTMLAnchorElement>("#openOptions").addEventListener("click", (e) => {
-    e.preventDefault();
+  $<HTMLButtonElement>("#openOptions").addEventListener("click", () => {
     chrome.runtime.openOptionsPage();
   });
 

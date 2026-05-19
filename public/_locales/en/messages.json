@@ -6,7 +6,7 @@
   "optionsTitle": { "message": "HistSieve Settings" },
 
   "popupToggleEnabled": { "message": "Enable / disable HistSieve" },
-  "lblEnableToggle": { "message": "Enable HistSieve" },
+  "lblEnableToggle": { "message": "Enable" },
   "popupKeywordCount": { "message": "Active keywords" },
   "popupLastClean": { "message": "Last cleanup" },
   "popupCleaning": { "message": "Cleaning…" },
