@@ -134,3 +134,87 @@ export function setCleanupConfig(
 export function withLastCleanAt(settings: Settings, ts: number): Settings {
   return { ...settings, lastCleanAt: ts };
 }
+
+export const KEYWORDS_EXPORT_TYPE = "histsieve.keywords";
+export const KEYWORDS_EXPORT_VERSION = 1;
+
+export type KeywordsExport = {
+  type: typeof KEYWORDS_EXPORT_TYPE;
+  version: typeof KEYWORDS_EXPORT_VERSION;
+  exportedAt: string;
+  keywords: ReadonlyArray<{ value: string; enabled: boolean }>;
+};
+
+export type MergeResult = {
+  next: Settings;
+  added: number;
+  skipped: number;
+};
+
+export function exportKeywords(settings: Settings, now: Date = new Date()): KeywordsExport {
+  return {
+    type: KEYWORDS_EXPORT_TYPE,
+    version: KEYWORDS_EXPORT_VERSION,
+    exportedAt: now.toISOString(),
+    keywords: settings.keywords.map((k) => ({ value: k.value, enabled: k.enabled })),
+  };
+}
+
+function sanitizeImportedKeyword(input: unknown): Keyword | null {
+  if (input === null || typeof input !== "object") return null;
+  const k = input as Record<string, unknown>;
+  if (typeof k.value !== "string" || k.value.trim().length === 0) return null;
+  return {
+    id: generateId(),
+    value: k.value.trim(),
+    enabled: typeof k.enabled === "boolean" ? k.enabled : true,
+  };
+}
+
+export function parseKeywordsExport(raw: unknown): Keyword[] {
+  if (raw === null || typeof raw !== "object") {
+    throw new Error("Invalid file: expected a JSON object.");
+  }
+  const payload = raw as Record<string, unknown>;
+  if (payload.type !== KEYWORDS_EXPORT_TYPE) {
+    throw new Error("Invalid file: not a HistSieve keywords export.");
+  }
+  if (payload.version !== KEYWORDS_EXPORT_VERSION) {
+    throw new Error(`Unsupported export version: ${String(payload.version)}.`);
+  }
+  if (!Array.isArray(payload.keywords)) {
+    throw new Error("Invalid file: missing keywords array.");
+  }
+  return payload.keywords
+    .map(sanitizeImportedKeyword)
+    .filter((k): k is Keyword => k !== null);
+}
+
+export function mergeKeywords(settings: Settings, incoming: ReadonlyArray<Keyword>): MergeResult {
+  const seen = new Set(settings.keywords.map((k) => normalizeKeywordValue(k.value)));
+  const added: Keyword[] = [];
+  let skipped = 0;
+
+  for (const kw of incoming) {
+    const norm = normalizeKeywordValue(kw.value);
+    if (seen.has(norm)) {
+      skipped += 1;
+      continue;
+    }
+    seen.add(norm);
+    added.push(kw);
+  }
+
+  if (added.length === 0) {
+    return { next: settings, added: 0, skipped };
+  }
+  return {
+    next: { ...settings, keywords: [...settings.keywords, ...added] },
+    added: added.length,
+    skipped,
+  };
+}
+
+export function replaceKeywords(settings: Settings, incoming: ReadonlyArray<Keyword>): Settings {
+  return { ...settings, keywords: [...incoming] };
+}

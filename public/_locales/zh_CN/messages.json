@@ -31,8 +31,39 @@
   "phKeyword": { "message": "例如：youtube.com" },
   "btnAdd": { "message": "添加" },
   "btnDelete": { "message": "删除" },
+  "btnExport": { "message": "导出" },
+  "btnImport": { "message": "导入" },
   "kwEmpty": { "message": "尚未添加关键词。" },
   "hintClickToEdit": { "message": "点击编辑" },
+
+  "importPrompt": {
+    "message": "导入 $COUNT$ 个关键词？\n\n确定 = 合并（跳过重复）\n取消 = 替换（覆盖现有列表）",
+    "placeholders": {
+      "COUNT": { "content": "$1", "example": "12" }
+    }
+  },
+  "importReplaceConfirm": {
+    "message": "确认用 $COUNT$ 个导入的关键词替换现有的 $EXISTING$ 个？",
+    "placeholders": {
+      "EXISTING": { "content": "$1", "example": "5" },
+      "COUNT": { "content": "$2", "example": "12" }
+    }
+  },
+  "importDoneMerge": {
+    "message": "已导入 $ADDED$ 个关键词（跳过 $SKIPPED$ 个重复）",
+    "placeholders": {
+      "ADDED": { "content": "$1", "example": "10" },
+      "SKIPPED": { "content": "$2", "example": "2" }
+    }
+  },
+  "importDoneReplace": {
+    "message": "已替换为 $COUNT$ 个关键词",
+    "placeholders": {
+      "COUNT": { "content": "$1", "example": "12" }
+    }
+  },
+  "importEmpty": { "message": "文件中未找到有效关键词。" },
+  "importError": { "message": "导入失败：文件格式无效。" },
 
   "sectionCleanup": { "message": "定期清理" },
   "cfgIntervalEnabled": { "message": "按计划清理" },

@@ -1,7 +1,11 @@
 import { loadSettings, saveSettings, onSettingsChanged } from "@/platform/chrome";
 import {
   addKeyword,
+  exportKeywords,
+  mergeKeywords,
+  parseKeywordsExport,
   removeKeyword,
+  replaceKeywords,
   setCleanupConfig,
   setKeywordEnabled,
   updateKeywordValue,
@@ -23,15 +27,21 @@ let cleanBtn: CleanButtonHandle | null = null;
 
 let savedHideTimer: number | null = null;
 
-function showSaved(): void {
+function showToast(message: string, variant: "success" | "error" = "success", ms = 1800): void {
   const el = $<HTMLElement>("#saveStatus");
-  $<HTMLElement>("#saveStatusText").textContent = t("statusSaved");
+  $<HTMLElement>("#saveStatusText").textContent = message;
+  el.classList.remove("error");
+  if (variant === "error") el.classList.add("error");
   el.classList.add("visible");
   if (savedHideTimer !== null) window.clearTimeout(savedHideTimer);
   savedHideTimer = window.setTimeout(() => {
     el.classList.remove("visible");
     savedHideTimer = null;
-  }, 1200);
+  }, ms);
+}
+
+function showSaved(): void {
+  showToast(t("statusSaved"), "success", 1200);
 }
 
 async function commit(next: Settings): Promise<void> {
@@ -182,6 +192,75 @@ function wireCleanupInputs(): void {
   }
 }
 
+function downloadKeywordsExport(): void {
+  const payload = exportKeywords(settings);
+  const json = JSON.stringify(payload, null, 2);
+  const blob = new Blob([json], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  a.href = url;
+  a.download = `histsieve-keywords-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function handleImportFile(file: File): Promise<void> {
+  let parsed: Keyword[];
+  try {
+    const text = await file.text();
+    const raw = JSON.parse(text);
+    parsed = parseKeywordsExport(raw);
+  } catch {
+    showToast(t("importError"), "error");
+    return;
+  }
+
+  if (parsed.length === 0) {
+    showToast(t("importEmpty"), "error");
+    return;
+  }
+
+  const merge = window.confirm(t("importPrompt", [String(parsed.length)]));
+  if (merge) {
+    const result = mergeKeywords(settings, parsed);
+    await commit(result.next);
+    renderKeywords();
+    showToast(t("importDoneMerge", [String(result.added), String(result.skipped)]));
+    return;
+  }
+
+  const existing = settings.keywords.length;
+  if (existing > 0) {
+    const ok = window.confirm(
+      t("importReplaceConfirm", [String(existing), String(parsed.length)]),
+    );
+    if (!ok) return;
+  }
+  await commit(replaceKeywords(settings, parsed));
+  renderKeywords();
+  showToast(t("importDoneReplace", [String(parsed.length)]));
+}
+
+function wireImportExport(): void {
+  $<HTMLButtonElement>("#kwExport").addEventListener("click", () => {
+    downloadKeywordsExport();
+  });
+
+  const fileInput = $<HTMLInputElement>("#kwImportFile");
+  $<HTMLButtonElement>("#kwImport").addEventListener("click", () => {
+    fileInput.value = "";
+    fileInput.click();
+  });
+  fileInput.addEventListener("change", async () => {
+    const file = fileInput.files?.[0];
+    if (!file) return;
+    await handleImportFile(file);
+  });
+}
+
 function wireKeywordForm(): void {
   const form = $<HTMLFormElement>("#kwForm");
   const input = $<HTMLInputElement>("#kwInput");
@@ -208,6 +287,7 @@ async function init(): Promise<void> {
   renderKeywords();
   wireCleanupInputs();
   wireKeywordForm();
+  wireImportExport();
 
   cleanBtn = attachCleanButton({
     button: $<HTMLButtonElement>("#cleanNow"),

@@ -288,6 +288,23 @@ body {
   transform: translate(-50%, 0);
 }
 
+.save-toast.error { background: var(--danger); }
+
+.card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.card__header h2 { margin: 0; }
+
+.kw-io {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
 /* Toggle switch */
 .switch {
   position: relative;

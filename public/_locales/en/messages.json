@@ -31,8 +31,39 @@
   "phKeyword": { "message": "e.g. youtube.com" },
   "btnAdd": { "message": "Add" },
   "btnDelete": { "message": "Delete" },
+  "btnExport": { "message": "Export" },
+  "btnImport": { "message": "Import" },
   "kwEmpty": { "message": "No keywords yet." },
   "hintClickToEdit": { "message": "Click to edit" },
+
+  "importPrompt": {
+    "message": "Import $COUNT$ keywords?\n\nOK = Merge (skip duplicates)\nCancel = Replace (overwrite existing list)",
+    "placeholders": {
+      "COUNT": { "content": "$1", "example": "12" }
+    }
+  },
+  "importReplaceConfirm": {
+    "message": "Replace all $EXISTING$ existing keywords with $COUNT$ imported ones?",
+    "placeholders": {
+      "EXISTING": { "content": "$1", "example": "5" },
+      "COUNT": { "content": "$2", "example": "12" }
+    }
+  },
+  "importDoneMerge": {
+    "message": "Imported $ADDED$ keywords ($SKIPPED$ duplicates skipped)",
+    "placeholders": {
+      "ADDED": { "content": "$1", "example": "10" },
+      "SKIPPED": { "content": "$2", "example": "2" }
+    }
+  },
+  "importDoneReplace": {
+    "message": "Replaced with $COUNT$ keywords",
+    "placeholders": {
+      "COUNT": { "content": "$1", "example": "12" }
+    }
+  },
+  "importEmpty": { "message": "No valid keywords found in file." },
+  "importError": { "message": "Import failed: invalid file format." },
 
   "sectionCleanup": { "message": "Scheduled cleanup" },
   "cfgIntervalEnabled": { "message": "Run on a schedule" },
