@@ -54,6 +54,10 @@ function renderKeywords(): void {
   const list = $<HTMLUListElement>("#kwList");
   const empty = $<HTMLParagraphElement>("#kwEmpty");
 
+  $<HTMLElement>("#activeKwCount").textContent = String(
+    settings.keywords.filter((k) => k.enabled).length,
+  );
+
   list.innerHTML = "";
   if (settings.keywords.length === 0) {
     empty.classList.remove("hidden");

@@ -9,7 +9,13 @@
   <body>
     <main class="page">
       <header class="page__header">
-        <h1 data-i18n="optionsTitle">HistSieve Settings</h1>
+        <div class="page__title">
+          <h1 data-i18n="optionsTitle">HistSieve Settings</h1>
+          <div class="page__summary" aria-live="polite">
+            <span data-i18n="popupKeywordCount">Active keywords</span>
+            <strong id="activeKwCount">0</strong>
+          </div>
+        </div>
         <label class="enable-toggle" data-i18n-title="popupToggleEnabled">
           <span class="enable-toggle__label" data-i18n="lblEnableToggle">Enable HistSieve</span>
           <span class="switch">
@@ -19,8 +25,14 @@
         </label>
       </header>
 
-      <section class="card">
-        <h2 data-i18n="sectionCleanup">Scheduled cleanup</h2>
+      <section class="card card--cleanup">
+        <div class="card__header">
+          <h2 data-i18n="sectionCleanup">Scheduled cleanup</h2>
+          <div class="cleanup-meta">
+            <span class="label" data-i18n="popupLastClean">Last cleanup</span>
+            <span id="lastClean" class="value">—</span>
+          </div>
+        </div>
 
         <label class="row">
           <input id="intervalEnabled" type="checkbox" />
@@ -51,11 +63,6 @@
             <span data-i18n="cfgScopeAll">All history</span>
           </label>
         </fieldset>
-
-        <div class="row">
-          <span class="label" data-i18n="popupLastClean">Last cleanup</span>
-          <span id="lastClean" class="value">—</span>
-        </div>
 
         <button id="cleanNow" class="primary" type="button" aria-live="polite"></button>
       </section>
