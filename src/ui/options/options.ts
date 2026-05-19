@@ -20,11 +20,17 @@ const $ = <T extends Element>(sel: string): T => {
 let settings: Settings;
 let cleanBtn: CleanButtonHandle | null = null;
 
+let savedHideTimer: number | null = null;
+
 function showSaved(): void {
   const el = $<HTMLElement>("#saveStatus");
-  el.textContent = t("statusSaved");
+  $<HTMLElement>("#saveStatusText").textContent = t("statusSaved");
   el.classList.add("visible");
-  window.setTimeout(() => el.classList.remove("visible"), 1500);
+  if (savedHideTimer !== null) window.clearTimeout(savedHideTimer);
+  savedHideTimer = window.setTimeout(() => {
+    el.classList.remove("visible");
+    savedHideTimer = null;
+  }, 1200);
 }
 
 async function commit(next: Settings): Promise<void> {
