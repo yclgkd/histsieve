@@ -44,5 +44,7 @@
   "cfgScopeAll": { "message": "All history" },
   "cfgDays": { "message": "days" },
 
-  "statusSaved": { "message": "Saved" }
+  "statusSaved": { "message": "Saved" },
+
+  "footerViewOnGithub": { "message": "View on GitHub" }
 }

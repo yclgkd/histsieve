@@ -44,5 +44,7 @@
   "cfgScopeAll": { "message": "全部历史记录" },
   "cfgDays": { "message": "天的记录" },
 
-  "statusSaved": { "message": "已保存" }
+  "statusSaved": { "message": "已保存" },
+
+  "footerViewOnGithub": { "message": "在 GitHub 查看源码" }
 }

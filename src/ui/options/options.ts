@@ -10,6 +10,7 @@ import type { CleanupScope, Keyword, Settings } from "@/core/types";
 import { applyI18n, t } from "@/ui/shared/i18n";
 import { formatTimestamp } from "@/ui/shared/format";
 import { attachCleanButton, type CleanButtonHandle } from "@/ui/shared/clean-button";
+import pkg from "../../../package.json";
 
 const $ = <T extends Element>(sel: string): T => {
   const el = document.querySelector<T>(sel);
@@ -201,6 +202,7 @@ function wireKeywordForm(): void {
 
 async function init(): Promise<void> {
   applyI18n();
+  $<HTMLElement>("#appVersion").textContent = `v${pkg.version}`;
   settings = await loadSettings();
   renderCleanup();
   renderKeywords();

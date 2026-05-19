@@ -237,6 +237,31 @@ body {
   50% { box-shadow: 0 0 0 6px rgba(234, 88, 12, 0); }
 }
 
+.page__footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 8px 0 16px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.page__footer-sep { opacity: 0.6; }
+
+.page__footer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.page__footer-link:hover { color: var(--primary); }
+.page__footer-link svg { display: block; }
+
 .save-toast {
   position: fixed;
   top: 16px;
