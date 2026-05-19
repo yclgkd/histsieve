@@ -8,12 +8,20 @@
   "popupToggleEnabled": { "message": "Enable / disable HistSieve" },
   "popupKeywordCount": { "message": "Active keywords" },
   "popupLastClean": { "message": "Last cleanup" },
-  "popupCleanNow": { "message": "Clean now" },
   "popupCleaning": { "message": "Cleaning…" },
   "popupCleanedOk": { "message": "Done." },
   "popupCleanedFail": { "message": "Cleanup failed." },
   "popupOpenSettings": { "message": "Settings" },
   "popupNever": { "message": "Never" },
+
+  "btnCleanAll": { "message": "Delete all history" },
+  "btnCleanOlder": {
+    "message": "Delete entries older than $DAYS$ days",
+    "placeholders": {
+      "DAYS": { "content": "$1", "example": "30" }
+    }
+  },
+  "btnConfirmAll": { "message": "Click again to confirm" },
 
   "sectionKeywords": { "message": "Keyword rules" },
   "hintKeywords": {

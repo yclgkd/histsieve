@@ -87,6 +87,19 @@ body {
 .primary:hover:not(:disabled) { background: var(--primary-hover); }
 .primary:disabled { opacity: 0.6; cursor: not-allowed; }
 
+.primary.danger { background: #dc2626; }
+.primary.danger:hover:not(:disabled) { background: #b91c1c; }
+.primary.confirming {
+  background: #ea580c;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+.primary.confirming:hover { background: #c2410c; }
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.45); }
+  50% { box-shadow: 0 0 0 6px rgba(234, 88, 12, 0); }
+}
+
 .popup__result {
   font-size: 12px;
   color: var(--muted);

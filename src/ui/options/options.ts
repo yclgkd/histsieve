@@ -9,6 +9,7 @@ import {
 import type { CleanupScope, Keyword, Settings } from "@/core/types";
 import { applyI18n, t } from "@/ui/shared/i18n";
 import { formatTimestamp } from "@/ui/shared/format";
+import { attachCleanButton, type CleanButtonHandle } from "@/ui/shared/clean-button";
 
 const $ = <T extends Element>(sel: string): T => {
   const el = document.querySelector<T>(sel);
@@ -17,6 +18,7 @@ const $ = <T extends Element>(sel: string): T => {
 };
 
 let settings: Settings;
+let cleanBtn: CleanButtonHandle | null = null;
 
 function showSaved(): void {
   const el = $<HTMLElement>("#saveStatus");
@@ -161,29 +163,16 @@ function wireCleanupInputs(): void {
     const v = parseInt((e.target as HTMLInputElement).value, 10);
     await commit(setCleanupConfig(settings, { olderThanDays: v }));
     renderCleanup();
+    cleanBtn?.refresh();
   });
 
   for (const radio of document.querySelectorAll<HTMLInputElement>('input[name="scope"]')) {
     radio.addEventListener("change", async (e) => {
       const value = (e.target as HTMLInputElement).value as CleanupScope;
       await commit(setCleanupConfig(settings, { scope: value }));
+      cleanBtn?.refresh();
     });
   }
-
-  $<HTMLButtonElement>("#cleanNow").addEventListener("click", async () => {
-    const btn = $<HTMLButtonElement>("#cleanNow");
-    const result = $<HTMLDivElement>("#cleanResult");
-    btn.disabled = true;
-    result.textContent = t("popupCleaning");
-    try {
-      const r = await chrome.runtime.sendMessage({ type: "histsieve.cleanNow" });
-      result.textContent = r?.ok ? t("popupCleanedOk") : t("popupCleanedFail");
-    } catch {
-      result.textContent = t("popupCleanedFail");
-    } finally {
-      btn.disabled = false;
-    }
-  });
 }
 
 function wireKeywordForm(): void {
@@ -212,10 +201,21 @@ async function init(): Promise<void> {
   wireCleanupInputs();
   wireKeywordForm();
 
+  cleanBtn = attachCleanButton({
+    button: $<HTMLButtonElement>("#cleanNow"),
+    result: $<HTMLDivElement>("#cleanResult"),
+    getSettings: () => settings,
+    runCleanup: async () => {
+      const r = await chrome.runtime.sendMessage({ type: "histsieve.cleanNow" });
+      return { ok: Boolean(r?.ok) };
+    },
+  });
+
   onSettingsChanged((next) => {
     settings = next;
     renderCleanup();
     renderKeywords();
+    cleanBtn?.refresh();
   });
 }
 

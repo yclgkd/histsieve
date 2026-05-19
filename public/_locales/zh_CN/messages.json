@@ -8,12 +8,20 @@
   "popupToggleEnabled": { "message": "启用 / 禁用 HistSieve" },
   "popupKeywordCount": { "message": "生效关键词" },
   "popupLastClean": { "message": "上次清理" },
-  "popupCleanNow": { "message": "立即清理" },
   "popupCleaning": { "message": "清理中…" },
   "popupCleanedOk": { "message": "已完成。" },
   "popupCleanedFail": { "message": "清理失败。" },
   "popupOpenSettings": { "message": "设置" },
   "popupNever": { "message": "从未" },
+
+  "btnCleanAll": { "message": "删除全部历史" },
+  "btnCleanOlder": {
+    "message": "删除 $DAYS$ 天前的历史",
+    "placeholders": {
+      "DAYS": { "content": "$1", "example": "30" }
+    }
+  },
+  "btnConfirmAll": { "message": "再点一次确认" },
 
   "sectionKeywords": { "message": "关键词规则" },
   "hintKeywords": {

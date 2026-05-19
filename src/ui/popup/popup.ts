@@ -1,6 +1,7 @@
 import { loadSettings, saveSettings, onSettingsChanged } from "@/platform/chrome";
 import { applyI18n, t } from "@/ui/shared/i18n";
 import { formatTimestamp } from "@/ui/shared/format";
+import { attachCleanButton, type CleanButtonHandle } from "@/ui/shared/clean-button";
 import type { Settings } from "@/core/types";
 
 const $ = <T extends Element>(sel: string): T => {
@@ -9,14 +10,13 @@ const $ = <T extends Element>(sel: string): T => {
   return el;
 };
 
-async function render(settings: Settings): Promise<void> {
-  const enabledEl = $<HTMLInputElement>("#enabled");
-  enabledEl.checked = settings.enabled;
+let settings: Settings;
 
+function render(): void {
+  $<HTMLInputElement>("#enabled").checked = settings.enabled;
   $<HTMLSpanElement>("#kwCount").textContent = String(
     settings.keywords.filter((k) => k.enabled).length,
   );
-
   const locale = chrome.i18n?.getUILanguage?.() ?? "en";
   $<HTMLSpanElement>("#lastClean").textContent = formatTimestamp(
     settings.lastCleanAt,
@@ -27,32 +27,22 @@ async function render(settings: Settings): Promise<void> {
 
 async function init(): Promise<void> {
   applyI18n();
-  let settings = await loadSettings();
-  await render(settings);
+  settings = await loadSettings();
+  render();
 
   $<HTMLInputElement>("#enabled").addEventListener("change", async (e) => {
-    const checked = (e.target as HTMLInputElement).checked;
-    settings = { ...settings, enabled: checked };
+    settings = { ...settings, enabled: (e.target as HTMLInputElement).checked };
     await saveSettings(settings);
   });
 
-  $<HTMLButtonElement>("#cleanNow").addEventListener("click", async () => {
-    const btn = $<HTMLButtonElement>("#cleanNow");
-    const result = $<HTMLDivElement>("#cleanResult");
-    btn.disabled = true;
-    result.textContent = t("popupCleaning");
-    try {
+  const cleanBtn: CleanButtonHandle = attachCleanButton({
+    button: $<HTMLButtonElement>("#cleanNow"),
+    result: $<HTMLDivElement>("#cleanResult"),
+    getSettings: () => settings,
+    runCleanup: async () => {
       const response = await chrome.runtime.sendMessage({ type: "histsieve.cleanNow" });
-      if (response?.ok) {
-        result.textContent = t("popupCleanedOk");
-      } else {
-        result.textContent = t("popupCleanedFail");
-      }
-    } catch {
-      result.textContent = t("popupCleanedFail");
-    } finally {
-      btn.disabled = false;
-    }
+      return { ok: Boolean(response?.ok) };
+    },
   });
 
   $<HTMLAnchorElement>("#openOptions").addEventListener("click", (e) => {
@@ -62,7 +52,8 @@ async function init(): Promise<void> {
 
   onSettingsChanged((next) => {
     settings = next;
-    void render(next);
+    render();
+    cleanBtn.refresh();
   });
 }
 
