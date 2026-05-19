@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Chrome extension: keyword-based and scheduled browser history cleanup.",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",

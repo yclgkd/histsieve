@@ -2,15 +2,20 @@
 
 HistSieve is a Chrome extension for cleaning browser history from rules you control.
 
+![HistSieve settings page](./store-assets/screenshot-options-1280x800.png)
+
 ## Features
 
 - Delete matching history entries immediately after a visit.
 - Match active keywords against the page URL and title, case-insensitively.
+- Enable or disable individual keyword rules without deleting them.
+- Run cleanup manually from the toolbar popup or the settings page.
 - Run scheduled cleanup by interval.
 - Run cleanup when Chrome starts.
 - Delete either all history or entries older than a configured number of days.
 - Import and export keyword rules as JSON.
 - English and Simplified Chinese UI.
+- Automatic light and dark theme that follows the system setting.
 
 ## Privacy Model
 
@@ -31,8 +36,11 @@ HistSieve does not request host permissions.
 
 ## Local Development
 
+Requires Node.js 20+ and pnpm 9+. If pnpm is missing, run `corepack enable`.
+
 ```bash
 pnpm install
+pnpm dev          # build with watch mode for local Chrome reloads
 pnpm test
 pnpm typecheck
 pnpm build
@@ -62,8 +70,6 @@ The upload package is generated under `release/`.
 6. Toggle scheduled cleanup and confirm settings persist after reopening Chrome.
 7. Export keywords, remove them, import the file, and confirm the list is restored.
 
-## Release Scope
+## License
 
-Version `0.1.0` focuses on local history cleanup, keyword rules, scheduling, and
-basic import/export. Cloud sync, remote backup, analytics, and account features are
-intentionally out of scope.
+[MIT](./LICENSE).
