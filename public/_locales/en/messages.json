@@ -1,7 +1,7 @@
 {
   "extName": { "message": "HistSieve" },
   "extDesc": {
-    "message": "Wipe browser history by keyword in real time, and on a schedule or at browser startup."
+    "message": "Wipe browser history by keyword — in real time, on a schedule, or at browser startup."
   },
   "optionsTitle": { "message": "HistSieve Settings" },
 
