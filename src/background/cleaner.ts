@@ -15,7 +15,8 @@ export type CleanupResult = {
   deletedByKeyword: number;
 };
 
-const SWEEP_MAX_RESULTS = 1000;
+const SWEEP_PAGE_SIZE = 1000;
+const HISTORY_TIME_EPSILON_MS = 0.001;
 
 export async function runCleanup(settings: Settings, deps: CleanerDeps): Promise<CleanupResult> {
   if (!settings.enabled) {
@@ -32,14 +33,29 @@ export async function runCleanup(settings: Settings, deps: CleanerDeps): Promise
   const endTime = ageCutoff(now, settings.cleanup.olderThanDays);
   await deps.deleteRange(0, endTime);
 
+  const deletedByKeyword =
+    settings.keywords.length > 0 ? await sweepKeywords(settings, deps, endTime, now) : 0;
+
+  return { cleanedAt: now, deletedByKeyword };
+}
+
+async function sweepKeywords(
+  settings: Settings,
+  deps: CleanerDeps,
+  startTime: number,
+  endTime: number,
+): Promise<number> {
   let deletedByKeyword = 0;
-  if (settings.keywords.length > 0) {
+  let pageEndTime = endTime;
+
+  while (pageEndTime >= startTime) {
     const items = await deps.searchHistory({
       text: "",
-      startTime: endTime,
-      endTime: now,
-      maxResults: SWEEP_MAX_RESULTS,
+      startTime,
+      endTime: pageEndTime,
+      maxResults: SWEEP_PAGE_SIZE,
     });
+
     for (const item of items) {
       if (!item.url) continue;
       if (!matchesAnyKeyword(item.url, item.title, settings.keywords)) continue;
@@ -50,7 +66,23 @@ export async function runCleanup(settings: Settings, deps: CleanerDeps): Promise
         console.warn("[histsieve] sweep delete failed", item.url, err);
       }
     }
+
+    if (items.length < SWEEP_PAGE_SIZE) break;
+    const oldest = oldestVisitTime(items);
+    if (oldest === null || oldest <= startTime) break;
+    const nextEndTime = oldest - HISTORY_TIME_EPSILON_MS;
+    if (nextEndTime >= pageEndTime) break;
+    pageEndTime = nextEndTime;
   }
 
-  return { cleanedAt: now, deletedByKeyword };
+  return deletedByKeyword;
+}
+
+function oldestVisitTime(items: ReadonlyArray<chrome.history.HistoryItem>): number | null {
+  let oldest: number | null = null;
+  for (const item of items) {
+    if (typeof item.lastVisitTime !== "number" || !Number.isFinite(item.lastVisitTime)) continue;
+    oldest = oldest === null ? item.lastVisitTime : Math.min(oldest, item.lastVisitTime);
+  }
+  return oldest;
 }

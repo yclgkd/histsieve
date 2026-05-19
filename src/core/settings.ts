@@ -16,9 +16,16 @@ export const DEFAULT_SETTINGS: Settings = Object.freeze({
 
 const MIN_INTERVAL_HOURS = 1;
 const MIN_DAYS = 1;
+export const MAX_KEYWORD_LENGTH = 200;
+
+function sanitizeKeywordValue(raw: string): string | null {
+  const trimmed = raw.trim();
+  if (trimmed.length === 0 || trimmed.length > MAX_KEYWORD_LENGTH) return null;
+  return trimmed;
+}
 
 export function isValidKeywordValue(raw: unknown): raw is string {
-  return typeof raw === "string" && raw.trim().length > 0;
+  return typeof raw === "string" && sanitizeKeywordValue(raw) !== null;
 }
 
 function clampInt(n: unknown, min: number, fallback: number): number {
@@ -38,10 +45,12 @@ function sanitizeKeyword(input: unknown): Keyword | null {
   if (input === null || typeof input !== "object") return null;
   const k = input as Record<string, unknown>;
   if (typeof k.id !== "string" || k.id.length === 0) return null;
-  if (typeof k.value !== "string" || k.value.trim().length === 0) return null;
+  if (typeof k.value !== "string") return null;
+  const value = sanitizeKeywordValue(k.value);
+  if (value === null) return null;
   return {
     id: k.id,
-    value: k.value,
+    value,
     enabled: typeof k.enabled === "boolean" ? k.enabled : true,
   };
 }
@@ -87,8 +96,8 @@ function cloneDefaults(): Settings {
 }
 
 export function addKeyword(settings: Settings, value: string): Settings {
-  const trimmed = value.trim();
-  if (trimmed.length === 0) return settings;
+  const trimmed = sanitizeKeywordValue(value);
+  if (trimmed === null) return settings;
 
   const normalizedNew = normalizeKeywordValue(trimmed);
   const exists = settings.keywords.some((k) => normalizeKeywordValue(k.value) === normalizedNew);
@@ -114,8 +123,8 @@ export function setKeywordEnabled(settings: Settings, id: string, enabled: boole
 }
 
 export function updateKeywordValue(settings: Settings, id: string, value: string): Settings {
-  const trimmed = value.trim();
-  if (trimmed.length === 0) return settings;
+  const trimmed = sanitizeKeywordValue(value);
+  if (trimmed === null) return settings;
   const next = settings.keywords.map((k) => (k.id === id ? { ...k, value: trimmed } : k));
   return { ...settings, keywords: next };
 }
@@ -157,10 +166,12 @@ export function exportKeywords(settings: Settings, now: Date = new Date()): Keyw
 function sanitizeImportedKeyword(input: unknown): Keyword | null {
   if (input === null || typeof input !== "object") return null;
   const k = input as Record<string, unknown>;
-  if (typeof k.value !== "string" || k.value.trim().length === 0) return null;
+  if (typeof k.value !== "string") return null;
+  const value = sanitizeKeywordValue(k.value);
+  if (value === null) return null;
   return {
     id: generateId(),
-    value: k.value.trim(),
+    value,
     enabled: typeof k.enabled === "boolean" ? k.enabled : true,
   };
 }

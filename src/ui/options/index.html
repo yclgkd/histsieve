@@ -122,6 +122,29 @@
         </svg>
         <span id="saveStatusText"></span>
       </div>
+
+      <dialog id="importModeDialog" class="modal">
+        <form method="dialog" class="modal__panel">
+          <h2 data-i18n="importModeTitle">Import keywords</h2>
+          <p id="importModeMessage" class="modal__message"></p>
+          <div class="modal__actions">
+            <button type="submit" value="cancel" class="icon-btn" data-i18n="btnCancel">
+              Cancel
+            </button>
+            <button
+              type="submit"
+              value="replace"
+              class="icon-btn danger"
+              data-i18n="btnImportReplace"
+            >
+              Replace
+            </button>
+            <button type="submit" value="merge" class="primary" data-i18n="btnImportMerge">
+              Merge
+            </button>
+          </div>
+        </form>
+      </dialog>
     </main>
     <script type="module" src="./options.ts"></script>
   </body>

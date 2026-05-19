@@ -218,6 +218,15 @@ describe("parseKeywordsExport", () => {
     expect(result.map((k) => k.value)).toEqual(["ok"]);
   });
 
+  it("drops imported keywords longer than the form limit", () => {
+    const result = parseKeywordsExport({
+      type: "histsieve.keywords",
+      version: 1,
+      keywords: [{ value: "x".repeat(201) }, { value: "y".repeat(200) }],
+    });
+    expect(result.map((k) => k.value)).toEqual(["y".repeat(200)]);
+  });
+
   it("throws on non-object input", () => {
     expect(() => parseKeywordsExport(null)).toThrow();
     expect(() => parseKeywordsExport("hi")).toThrow();

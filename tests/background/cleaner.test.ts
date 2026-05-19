@@ -64,6 +64,37 @@ describe("runCleanup — scope: olderThan", () => {
     expect(deps.deleteUrl).not.toHaveBeenCalledWith("https://github.com/x");
   });
 
+  it("continues keyword sweep beyond the first history search page", async () => {
+    const s = addKeyword(
+      setCleanupConfig(DEFAULT_SETTINGS, { scope: "olderThan", olderThanDays: 7 }),
+      "target",
+    );
+    const firstPage: chrome.history.HistoryItem[] = Array.from({ length: 1000 }, (_, i) => ({
+      url: `https://example.com/${i}`,
+      title: "",
+      id: `old-${i}`,
+      lastVisitTime: NOW - i,
+    }));
+    const secondPage: chrome.history.HistoryItem[] = [
+      {
+        url: "https://target.example/watch",
+        title: "",
+        id: "target",
+        lastVisitTime: NOW - 1000,
+      },
+    ];
+    const searchHistory = vi
+      .fn<Parameters<typeof runCleanup>[1]["searchHistory"]>()
+      .mockResolvedValueOnce(firstPage)
+      .mockResolvedValueOnce(secondPage);
+    const deps = makeDeps({ searchHistory });
+
+    await runCleanup(s, deps);
+
+    expect(searchHistory).toHaveBeenCalledTimes(2);
+    expect(deps.deleteUrl).toHaveBeenCalledWith("https://target.example/watch");
+  });
+
   it("does not sweep when there are no keywords", async () => {
     const s = setCleanupConfig(DEFAULT_SETTINGS, { scope: "olderThan", olderThanDays: 7 });
     const deps = makeDeps({

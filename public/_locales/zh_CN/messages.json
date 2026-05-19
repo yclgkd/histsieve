@@ -33,24 +33,31 @@
   "btnDelete": { "message": "删除" },
   "btnExport": { "message": "导出" },
   "btnImport": { "message": "导入" },
+  "btnCancel": { "message": "取消" },
+  "btnImportMerge": { "message": "合并" },
+  "btnImportReplace": { "message": "替换" },
   "kwEmpty": {
     "message": "还没有关键词 —— 在上方添加第一个吧。例如 youtube.com、reddit.com，或任何你不想留在历史里的词。"
   },
   "hintClickToEdit": { "message": "点击编辑" },
+  "keywordDuplicate": { "message": "关键词已存在。" },
+  "keywordInvalid": { "message": "关键词长度需为 1-200 个字符。" },
 
-  "importPrompt": {
-    "message": "导入 $COUNT$ 个关键词？\n\n确定 = 合并（跳过重复）\n取消 = 替换（覆盖现有列表）",
+  "importModeTitle": { "message": "导入关键词" },
+  "importModeMessage": {
+    "message": "将 $COUNT$ 个关键词导入当前 $EXISTING$ 个关键词的列表？",
+    "placeholders": {
+      "COUNT": { "content": "$1", "example": "12" },
+      "EXISTING": { "content": "$2", "example": "5" }
+    }
+  },
+  "importPromptFallback": {
+    "message": "导入 $COUNT$ 个关键词。输入 merge 合并，或输入 replace 替换。取消则停止。",
     "placeholders": {
       "COUNT": { "content": "$1", "example": "12" }
     }
   },
-  "importReplaceConfirm": {
-    "message": "确认用 $COUNT$ 个导入的关键词替换现有的 $EXISTING$ 个？",
-    "placeholders": {
-      "EXISTING": { "content": "$1", "example": "5" },
-      "COUNT": { "content": "$2", "example": "12" }
-    }
-  },
+
   "importDoneMerge": {
     "message": "已导入 $ADDED$ 个关键词（跳过 $SKIPPED$ 个重复）",
     "placeholders": {
@@ -78,6 +85,7 @@
   "cfgDays": { "message": "天的记录" },
 
   "statusSaved": { "message": "已保存" },
+  "statusSaveFailed": { "message": "保存失败，请重试。" },
 
   "footerViewOnGithub": { "message": "在 GitHub 查看源码" }
 }

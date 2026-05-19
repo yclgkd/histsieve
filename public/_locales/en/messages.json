@@ -33,24 +33,31 @@
   "btnDelete": { "message": "Delete" },
   "btnExport": { "message": "Export" },
   "btnImport": { "message": "Import" },
+  "btnCancel": { "message": "Cancel" },
+  "btnImportMerge": { "message": "Merge" },
+  "btnImportReplace": { "message": "Replace" },
   "kwEmpty": {
     "message": "No keywords yet — add your first one above. Try youtube.com, reddit.com, or any word you'd like wiped from history."
   },
   "hintClickToEdit": { "message": "Click to edit" },
+  "keywordDuplicate": { "message": "Keyword already exists." },
+  "keywordInvalid": { "message": "Keyword must be 1-200 characters." },
 
-  "importPrompt": {
-    "message": "Import $COUNT$ keywords?\n\nOK = Merge (skip duplicates)\nCancel = Replace (overwrite existing list)",
+  "importModeTitle": { "message": "Import keywords" },
+  "importModeMessage": {
+    "message": "Import $COUNT$ keywords into your current list of $EXISTING$ keywords?",
+    "placeholders": {
+      "COUNT": { "content": "$1", "example": "12" },
+      "EXISTING": { "content": "$2", "example": "5" }
+    }
+  },
+  "importPromptFallback": {
+    "message": "Import $COUNT$ keywords. Type merge or replace. Cancel to stop.",
     "placeholders": {
       "COUNT": { "content": "$1", "example": "12" }
     }
   },
-  "importReplaceConfirm": {
-    "message": "Replace all $EXISTING$ existing keywords with $COUNT$ imported ones?",
-    "placeholders": {
-      "EXISTING": { "content": "$1", "example": "5" },
-      "COUNT": { "content": "$2", "example": "12" }
-    }
-  },
+
   "importDoneMerge": {
     "message": "Imported $ADDED$ keywords ($SKIPPED$ duplicates skipped)",
     "placeholders": {
@@ -78,6 +85,7 @@
   "cfgDays": { "message": "days" },
 
   "statusSaved": { "message": "Saved" },
+  "statusSaveFailed": { "message": "Save failed. Please try again." },
 
   "footerViewOnGithub": { "message": "View on GitHub" }
 }

@@ -15,6 +15,7 @@ import { attachCleanButton, type CleanButtonHandle } from "@/ui/shared/clean-but
 import { formatTimestamp } from "@/ui/shared/format";
 import { applyI18n, t } from "@/ui/shared/i18n";
 import pkg from "../../../package.json";
+import { beginKeywordEdit } from "./editable-keyword";
 
 const $ = <T extends Element>(sel: string): T => {
   const el = document.querySelector<T>(sel);
@@ -44,10 +45,22 @@ function showSaved(): void {
   showToast(t("statusSaved"), "success", 1200);
 }
 
-async function commit(next: Settings): Promise<void> {
+async function commit(next: Settings): Promise<boolean> {
+  const previous = settings;
   settings = next;
-  await saveSettings(next);
-  showSaved();
+  try {
+    await saveSettings(next);
+    showSaved();
+    return true;
+  } catch (err) {
+    console.warn("[histsieve] save settings failed", err);
+    settings = previous;
+    renderCleanup();
+    renderKeywords();
+    cleanBtn?.refresh();
+    showToast(t("statusSaveFailed"), "error", 2400);
+    return false;
+  }
 }
 
 function renderKeywords(): void {
@@ -102,41 +115,14 @@ function renderKeywordRow(kw: Keyword): HTMLLIElement {
 }
 
 function beginEdit(span: HTMLSpanElement, id: string): void {
-  if (span.isContentEditable) return;
-  const original = span.textContent ?? "";
-  span.contentEditable = "true";
-  span.focus();
-  const range = document.createRange();
-  range.selectNodeContents(span);
-  const sel = window.getSelection();
-  sel?.removeAllRanges();
-  sel?.addRange(range);
-
-  const finish = async (): Promise<void> => {
-    span.contentEditable = "false";
-    const newValue = (span.textContent ?? "").trim();
-    if (newValue.length === 0 || newValue === original) {
-      span.textContent = original;
-      return;
+  beginKeywordEdit(span, (newValue) => {
+    const next = updateKeywordValue(settings, id, newValue);
+    if (next === settings) {
+      showToast(t("keywordInvalid"), "error");
+      return Promise.resolve(false);
     }
-    await commit(updateKeywordValue(settings, id, newValue));
-  };
-
-  span.addEventListener("blur", finish, { once: true });
-  span.addEventListener(
-    "keydown",
-    (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        span.blur();
-      } else if (e.key === "Escape") {
-        e.preventDefault();
-        span.textContent = original;
-        span.blur();
-      }
-    },
-    { once: true },
-  );
+    return commit(next);
+  });
 }
 
 function renderCleanup(): void {
@@ -225,23 +211,47 @@ async function handleImportFile(file: File): Promise<void> {
     return;
   }
 
-  const merge = window.confirm(t("importPrompt", [String(parsed.length)]));
-  if (merge) {
+  const mode = await chooseImportMode(parsed.length, settings.keywords.length);
+  if (mode === "cancel") return;
+
+  if (mode === "merge") {
     const result = mergeKeywords(settings, parsed);
-    await commit(result.next);
-    renderKeywords();
-    showToast(t("importDoneMerge", [String(result.added), String(result.skipped)]));
+    if (await commit(result.next)) {
+      renderKeywords();
+      showToast(t("importDoneMerge", [String(result.added), String(result.skipped)]));
+    }
     return;
   }
 
-  const existing = settings.keywords.length;
-  if (existing > 0) {
-    const ok = window.confirm(t("importReplaceConfirm", [String(existing), String(parsed.length)]));
-    if (!ok) return;
+  if (await commit(replaceKeywords(settings, parsed))) {
+    renderKeywords();
+    showToast(t("importDoneReplace", [String(parsed.length)]));
   }
-  await commit(replaceKeywords(settings, parsed));
-  renderKeywords();
-  showToast(t("importDoneReplace", [String(parsed.length)]));
+}
+
+type ImportMode = "merge" | "replace" | "cancel";
+
+function toImportMode(value: string): ImportMode {
+  return value === "merge" || value === "replace" ? value : "cancel";
+}
+
+function chooseImportMode(count: number, existing: number): Promise<ImportMode> {
+  const dialog = $<HTMLDialogElement>("#importModeDialog");
+  const message = $<HTMLParagraphElement>("#importModeMessage");
+  message.textContent = t("importModeMessage", [String(count), String(existing)]);
+
+  if (typeof dialog.showModal !== "function") {
+    const answer = window.prompt(t("importPromptFallback", [String(count)]), "merge");
+    return Promise.resolve(toImportMode(answer?.trim().toLowerCase() ?? "cancel"));
+  }
+
+  return new Promise((resolve) => {
+    dialog.returnValue = "cancel";
+    dialog.addEventListener("close", () => resolve(toImportMode(dialog.returnValue)), {
+      once: true,
+    });
+    dialog.showModal();
+  });
 }
 
 function wireImportExport(): void {
@@ -270,12 +280,14 @@ function wireKeywordForm(): void {
     if (value.length === 0) return;
     const next = addKeyword(settings, value);
     if (next === settings) {
+      showToast(t("keywordDuplicate"), "error");
       input.value = "";
       return;
     }
-    await commit(next);
-    input.value = "";
-    renderKeywords();
+    if (await commit(next)) {
+      input.value = "";
+      renderKeywords();
+    }
   });
 }
 

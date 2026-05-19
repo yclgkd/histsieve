@@ -58,8 +58,12 @@ export function attachCleanButton(opts: CleanButtonOptions): CleanButtonHandle {
   };
 
   const refresh = (): void => {
-    if (confirming || inFlight || revertTimer !== null) return;
+    if (inFlight || revertTimer !== null) return;
     const s = getSettings();
+    if (confirming) {
+      if (s.cleanup.scope === "all") return;
+      cancelConfirm();
+    }
     clearStateClasses();
     button.textContent = getCleanButtonText(s);
     button.classList.toggle("danger", s.cleanup.scope === "all");

@@ -228,6 +228,26 @@ describe("attachCleanButton", () => {
     expect(button.classList.contains("danger")).toBe(true);
   });
 
+  it("refresh() cancels all-history confirmation when scope changes to olderThan", () => {
+    const button = setupDom();
+    let s = setCleanupConfig(DEFAULT_SETTINGS, { scope: "all" });
+    const handle = attachCleanButton({
+      button,
+      getSettings: () => s,
+      runCleanup: async () => ({ ok: true }),
+    });
+
+    button.click();
+    expect(button.classList.contains("confirming")).toBe(true);
+
+    s = setCleanupConfig(DEFAULT_SETTINGS, { scope: "olderThan", olderThanDays: 10 });
+    handle.refresh();
+
+    expect(button.classList.contains("confirming")).toBe(false);
+    expect(button.textContent).toBe("Delete entries older than 10 days");
+    expect(button.classList.contains("danger")).toBe(false);
+  });
+
   it("refresh() is a no-op while showing success outcome (does not stomp the message)", async () => {
     const button = setupDom();
     const handle = attachCleanButton({

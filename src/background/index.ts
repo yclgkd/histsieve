@@ -1,4 +1,3 @@
-import { withLastCleanAt } from "@/core/settings";
 import type { Settings } from "@/core/types";
 import {
   clearAlarm,
@@ -11,7 +10,7 @@ import {
   saveSettings,
   searchHistory,
 } from "@/platform/chrome";
-import { runCleanup } from "./cleaner";
+import { createCleanupExecutor } from "./cleanup-executor";
 import { handleVisit } from "./keyword-watcher";
 import { handleRuntimeMessage } from "./messages";
 import { ALARM_NAME, syncAlarms } from "./scheduler";
@@ -23,6 +22,19 @@ async function getSettings(): Promise<Settings> {
   cachedSettings = await loadSettings();
   return cachedSettings;
 }
+
+const executeCleanup = createCleanupExecutor({
+  getSettings,
+  saveSettings,
+  setCachedSettings: (settings) => {
+    cachedSettings = settings;
+  },
+  deleteAll: deleteAllHistory,
+  deleteRange: deleteHistoryRange,
+  deleteUrl: deleteHistoryUrl,
+  searchHistory,
+  now: () => Date.now(),
+});
 
 onSettingsChanged((next) => {
   cachedSettings = next;
@@ -64,20 +76,3 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
   return handleRuntimeMessage(message, { executeCleanup }, sendResponse);
 });
-
-async function executeCleanup(): Promise<{ cleanedAt: number | null; deletedByKeyword: number }> {
-  const settings = await getSettings();
-  const result = await runCleanup(settings, {
-    deleteAll: deleteAllHistory,
-    deleteRange: deleteHistoryRange,
-    deleteUrl: deleteHistoryUrl,
-    searchHistory,
-    now: () => Date.now(),
-  });
-  if (result.cleanedAt !== null) {
-    const updated = withLastCleanAt(settings, result.cleanedAt);
-    cachedSettings = updated;
-    await saveSettings(updated);
-  }
-  return result;
-}
