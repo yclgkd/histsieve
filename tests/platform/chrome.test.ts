@@ -1,27 +1,20 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 import type { Settings } from "@/core/types";
+
+type AnyMock = Mock<any[], any>;
 
 type ChromeMock = {
   storage: {
-    sync: {
-      get: ReturnType<typeof vi.fn>;
-      set: ReturnType<typeof vi.fn>;
-    };
-    onChanged: {
-      addListener: ReturnType<typeof vi.fn>;
-      removeListener: ReturnType<typeof vi.fn>;
-    };
+    sync: { get: AnyMock; set: AnyMock };
+    onChanged: { addListener: AnyMock; removeListener: AnyMock };
   };
   history: {
-    deleteUrl: ReturnType<typeof vi.fn>;
-    deleteRange: ReturnType<typeof vi.fn>;
-    deleteAll: ReturnType<typeof vi.fn>;
-    search: ReturnType<typeof vi.fn>;
+    deleteUrl: AnyMock;
+    deleteRange: AnyMock;
+    deleteAll: AnyMock;
+    search: AnyMock;
   };
-  alarms: {
-    create: ReturnType<typeof vi.fn>;
-    clear: ReturnType<typeof vi.fn>;
-  };
+  alarms: { create: AnyMock; clear: AnyMock };
 };
 
 const installChromeMock = (): ChromeMock => {
