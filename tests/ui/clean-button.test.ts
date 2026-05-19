@@ -42,20 +42,16 @@ describe("getCleanButtonText", () => {
 
 describe("attachCleanButton", () => {
   const setupDom = () => {
-    document.body.innerHTML = `<button id="btn"></button><div id="result"></div>`;
-    return {
-      button: document.querySelector<HTMLButtonElement>("#btn")!,
-      result: document.querySelector<HTMLDivElement>("#result")!,
-    };
+    document.body.innerHTML = `<button id="btn"></button>`;
+    return document.querySelector<HTMLButtonElement>("#btn")!;
   };
 
   beforeEach(() => installChrome(baseMessages));
 
   it("renders the scope text on attach (olderThan)", () => {
-    const { button, result } = setupDom();
+    const button = setupDom();
     attachCleanButton({
       button,
-      result,
       getSettings: () =>
         setCleanupConfig(DEFAULT_SETTINGS, { scope: "olderThan", olderThanDays: 14 }),
       runCleanup: async () => ({ ok: true }),
@@ -65,10 +61,9 @@ describe("attachCleanButton", () => {
   });
 
   it("renders the danger style when scope=all", () => {
-    const { button, result } = setupDom();
+    const button = setupDom();
     attachCleanButton({
       button,
-      result,
       getSettings: () => setCleanupConfig(DEFAULT_SETTINGS, { scope: "all" }),
       runCleanup: async () => ({ ok: true }),
     });
@@ -76,27 +71,74 @@ describe("attachCleanButton", () => {
     expect(button.classList.contains("danger")).toBe(true);
   });
 
-  it("scope=olderThan: single click runs cleanup directly (no confirm)", async () => {
-    const { button, result } = setupDom();
+  it("scope=olderThan: single click runs cleanup, shows Done on button then reverts", async () => {
+    const button = setupDom();
     const runCleanup = vi.fn(async () => ({ ok: true }));
     attachCleanButton({
       button,
-      result,
+      getSettings: () =>
+        setCleanupConfig(DEFAULT_SETTINGS, { scope: "olderThan", olderThanDays: 30 }),
+      runCleanup,
+      successRevertMs: 50,
+    });
+    button.click();
+    await vi.waitFor(() => expect(button.textContent).toBe("Done."));
+    expect(button.classList.contains("success")).toBe(true);
+    expect(runCleanup).toHaveBeenCalledOnce();
+    await vi.waitFor(() => expect(button.textContent).toBe("Delete entries older than 30 days"));
+    expect(button.classList.contains("success")).toBe(false);
+  });
+
+  it("transitions through busy state before showing outcome", async () => {
+    const button = setupDom();
+    let resolveRun: (v: { ok: boolean }) => void = () => {};
+    const runCleanup = (): Promise<{ ok: boolean }> =>
+      new Promise((resolve) => {
+        resolveRun = resolve;
+      });
+    attachCleanButton({
+      button,
       getSettings: () =>
         setCleanupConfig(DEFAULT_SETTINGS, { scope: "olderThan", olderThanDays: 30 }),
       runCleanup,
     });
     button.click();
-    await vi.waitFor(() => expect(result.textContent).toBe("Done."));
-    expect(runCleanup).toHaveBeenCalled();
+    await vi.waitFor(() => expect(button.textContent).toBe("Cleaning…"));
+    expect(button.classList.contains("busy")).toBe(true);
+    expect(button.disabled).toBe(true);
+    resolveRun({ ok: true });
+    await vi.waitFor(() => expect(button.classList.contains("success")).toBe(true));
+    expect(button.disabled).toBe(false);
+  });
+
+  it("ignores clicks while in flight", async () => {
+    const button = setupDom();
+    let resolveRun: (v: { ok: boolean }) => void = () => {};
+    const runCleanup = vi.fn(
+      (): Promise<{ ok: boolean }> =>
+        new Promise((resolve) => {
+          resolveRun = resolve;
+        }),
+    );
+    attachCleanButton({
+      button,
+      getSettings: () =>
+        setCleanupConfig(DEFAULT_SETTINGS, { scope: "olderThan", olderThanDays: 30 }),
+      runCleanup,
+    });
+    button.click();
+    button.click();
+    button.click();
+    resolveRun({ ok: true });
+    await vi.waitFor(() => expect(button.classList.contains("success")).toBe(true));
+    expect(runCleanup).toHaveBeenCalledOnce();
   });
 
   it("scope=all: first click enters confirm state, does NOT run cleanup", () => {
-    const { button, result } = setupDom();
+    const button = setupDom();
     const runCleanup = vi.fn(async () => ({ ok: true }));
     attachCleanButton({
       button,
-      result,
       getSettings: () => setCleanupConfig(DEFAULT_SETTINGS, { scope: "all" }),
       runCleanup,
     });
@@ -107,27 +149,26 @@ describe("attachCleanButton", () => {
   });
 
   it("scope=all: second click within timeout runs cleanup", async () => {
-    const { button, result } = setupDom();
+    const button = setupDom();
     const runCleanup = vi.fn(async () => ({ ok: true }));
     attachCleanButton({
       button,
-      result,
       getSettings: () => setCleanupConfig(DEFAULT_SETTINGS, { scope: "all" }),
       runCleanup,
+      successRevertMs: 50,
     });
     button.click();
     button.click();
-    await vi.waitFor(() => expect(result.textContent).toBe("Done."));
+    await vi.waitFor(() => expect(button.textContent).toBe("Done."));
     expect(runCleanup).toHaveBeenCalledOnce();
     expect(button.classList.contains("confirming")).toBe(false);
   });
 
   it("scope=all: confirm state reverts after timeout", async () => {
     vi.useFakeTimers();
-    const { button, result } = setupDom();
+    const button = setupDom();
     attachCleanButton({
       button,
-      result,
       getSettings: () => setCleanupConfig(DEFAULT_SETTINGS, { scope: "all" }),
       runCleanup: async () => ({ ok: true }),
       confirmTimeoutMs: 100,
@@ -139,40 +180,42 @@ describe("attachCleanButton", () => {
     expect(button.textContent).toBe("Delete all history");
   });
 
-  it("shows fail message when runCleanup throws", async () => {
-    const { button, result } = setupDom();
+  it("shows error state when runCleanup throws", async () => {
+    const button = setupDom();
     attachCleanButton({
       button,
-      result,
       getSettings: () =>
         setCleanupConfig(DEFAULT_SETTINGS, { scope: "olderThan", olderThanDays: 30 }),
       runCleanup: async () => {
         throw new Error("boom");
       },
+      failureRevertMs: 50,
     });
     button.click();
-    await vi.waitFor(() => expect(result.textContent).toBe("Cleanup failed."));
+    await vi.waitFor(() => expect(button.textContent).toBe("Cleanup failed."));
+    expect(button.classList.contains("error")).toBe(true);
+    await vi.waitFor(() => expect(button.textContent).toBe("Delete entries older than 30 days"));
   });
 
-  it("shows fail message when runCleanup returns ok=false", async () => {
-    const { button, result } = setupDom();
+  it("shows error state when runCleanup returns ok=false", async () => {
+    const button = setupDom();
     attachCleanButton({
       button,
-      result,
       getSettings: () =>
         setCleanupConfig(DEFAULT_SETTINGS, { scope: "olderThan", olderThanDays: 30 }),
       runCleanup: async () => ({ ok: false }),
+      failureRevertMs: 50,
     });
     button.click();
-    await vi.waitFor(() => expect(result.textContent).toBe("Cleanup failed."));
+    await vi.waitFor(() => expect(button.textContent).toBe("Cleanup failed."));
+    expect(button.classList.contains("error")).toBe(true);
   });
 
   it("refresh() updates text after settings change", () => {
-    const { button, result } = setupDom();
+    const button = setupDom();
     let s = setCleanupConfig(DEFAULT_SETTINGS, { scope: "olderThan", olderThanDays: 7 });
     const handle = attachCleanButton({
       button,
-      result,
       getSettings: () => s,
       runCleanup: async () => ({ ok: true }),
     });
@@ -181,5 +224,20 @@ describe("attachCleanButton", () => {
     handle.refresh();
     expect(button.textContent).toBe("Delete all history");
     expect(button.classList.contains("danger")).toBe(true);
+  });
+
+  it("refresh() is a no-op while showing success outcome (does not stomp the message)", async () => {
+    const button = setupDom();
+    const handle = attachCleanButton({
+      button,
+      getSettings: () =>
+        setCleanupConfig(DEFAULT_SETTINGS, { scope: "olderThan", olderThanDays: 30 }),
+      runCleanup: async () => ({ ok: true }),
+      successRevertMs: 200,
+    });
+    button.click();
+    await vi.waitFor(() => expect(button.textContent).toBe("Done."));
+    handle.refresh();
+    expect(button.textContent).toBe("Done.");
   });
 });

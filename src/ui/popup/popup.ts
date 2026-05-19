@@ -37,7 +37,6 @@ async function init(): Promise<void> {
 
   const cleanBtn: CleanButtonHandle = attachCleanButton({
     button: $<HTMLButtonElement>("#cleanNow"),
-    result: $<HTMLDivElement>("#cleanResult"),
     getSettings: () => settings,
     runCleanup: async () => {
       const response = await chrome.runtime.sendMessage({ type: "histsieve.cleanNow" });

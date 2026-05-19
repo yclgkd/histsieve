@@ -219,6 +219,18 @@ body {
   animation: pulse 1.2s ease-in-out infinite;
 }
 .primary.confirming:hover { background: #c2410c; }
+.primary.busy { background: #6b7280; cursor: wait; }
+.primary.success {
+  background: var(--on-bg);
+  animation: pop 0.25s ease-out;
+}
+.primary.error { background: var(--danger); }
+
+@keyframes pop {
+  0% { transform: scale(0.98); }
+  60% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
 
 @keyframes pulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.45); }
