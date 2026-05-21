@@ -11,6 +11,7 @@
   "popupLastClean": { "message": "Last cleanup" },
   "popupCleaning": { "message": "Cleaning…" },
   "popupCleanedOk": { "message": "Done." },
+  "popupCleanedPartial": { "message": "Partly cleaned." },
   "popupCleanedFail": { "message": "Cleanup failed." },
   "popupOpenSettings": { "message": "Settings" },
   "popupNever": { "message": "Never" },

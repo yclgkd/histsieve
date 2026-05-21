@@ -20,6 +20,7 @@ const baseMessages = {
   btnConfirmAll: "Click again to confirm",
   popupCleaning: "Cleaning…",
   popupCleanedOk: "Done.",
+  popupCleanedPartial: "Partly cleaned.",
   popupCleanedFail: "Cleanup failed.",
 };
 
@@ -87,6 +88,22 @@ describe("attachCleanButton", () => {
     await vi.waitFor(() => expect(button.textContent).toBe("Done."));
     expect(button.classList.contains("success")).toBe(true);
     expect(runCleanup).toHaveBeenCalledOnce();
+    await vi.waitFor(() => expect(button.textContent).toBe("Delete entries older than 30 days"));
+    expect(button.classList.contains("success")).toBe(false);
+  });
+
+  it("shows the partial-cleanup message when the sweep was truncated, then reverts", async () => {
+    const button = setupDom();
+    attachCleanButton({
+      button,
+      getSettings: () =>
+        setCleanupConfig(DEFAULT_SETTINGS, { scope: "olderThan", olderThanDays: 30 }),
+      runCleanup: async () => ({ ok: true, truncated: true }),
+      successRevertMs: 50,
+    });
+    button.click();
+    await vi.waitFor(() => expect(button.textContent).toBe("Partly cleaned."));
+    expect(button.classList.contains("success")).toBe(true);
     await vi.waitFor(() => expect(button.textContent).toBe("Delete entries older than 30 days"));
     expect(button.classList.contains("success")).toBe(false);
   });

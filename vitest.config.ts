@@ -14,13 +14,7 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "html"],
       include: ["src/**/*.ts"],
-      exclude: [
-        "src/manifest.config.ts",
-        "src/**/*.d.ts",
-        "src/background/index.ts",
-        "src/ui/popup/popup.ts",
-        "src/ui/options/options.ts",
-      ],
+      exclude: ["src/manifest.config.ts", "src/**/*.d.ts"],
       thresholds: {
         lines: 80,
         functions: 80,

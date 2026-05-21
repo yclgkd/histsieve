@@ -13,7 +13,7 @@ import type { CleanupScope, Keyword, Settings } from "@/core/types";
 import { loadSettings, onSettingsChanged, saveSettings } from "@/platform/chrome";
 import { attachCleanButton, type CleanButtonHandle } from "@/ui/shared/clean-button";
 import { formatTimestamp } from "@/ui/shared/format";
-import { applyI18n, t } from "@/ui/shared/i18n";
+import { applyI18n, getUILocale, t } from "@/ui/shared/i18n";
 import pkg from "../../../package.json";
 import { beginKeywordEdit } from "./editable-keyword";
 
@@ -23,20 +23,34 @@ const $ = <T extends Element>(sel: string): T => {
   return el;
 };
 
+type Els = {
+  enabled: HTMLInputElement;
+  intervalEnabled: HTMLInputElement;
+  intervalHours: HTMLInputElement;
+  onStartup: HTMLInputElement;
+  olderThanDays: HTMLInputElement;
+  lastClean: HTMLSpanElement;
+  saveStatus: HTMLElement;
+  saveStatusText: HTMLElement;
+  kwList: HTMLUListElement;
+  kwEmpty: HTMLParagraphElement;
+  activeKwCount: HTMLElement;
+};
+
 let settings: Settings;
 let cleanBtn: CleanButtonHandle | null = null;
+let els: Els;
+let lastWrittenJson: string | null = null;
 
 let savedHideTimer: number | null = null;
 
 function showToast(message: string, variant: "success" | "error" = "success", ms = 1800): void {
-  const el = $<HTMLElement>("#saveStatus");
-  $<HTMLElement>("#saveStatusText").textContent = message;
-  el.classList.remove("error");
-  if (variant === "error") el.classList.add("error");
-  el.classList.add("visible");
+  els.saveStatusText.textContent = message;
+  els.saveStatus.classList.toggle("error", variant === "error");
+  els.saveStatus.classList.add("visible");
   if (savedHideTimer !== null) window.clearTimeout(savedHideTimer);
   savedHideTimer = window.setTimeout(() => {
-    el.classList.remove("visible");
+    els.saveStatus.classList.remove("visible");
     savedHideTimer = null;
   }, ms);
 }
@@ -45,41 +59,44 @@ function showSaved(): void {
   showToast(t("statusSaved"), "success", 1200);
 }
 
+function renderAll(): void {
+  renderCleanup();
+  renderKeywords();
+  cleanBtn?.refresh();
+}
+
 async function commit(next: Settings): Promise<boolean> {
   const previous = settings;
+  const nextJson = JSON.stringify(next);
   settings = next;
   try {
+    lastWrittenJson = nextJson;
     await saveSettings(next);
+    renderAll();
     showSaved();
     return true;
   } catch (err) {
     console.warn("[histsieve] save settings failed", err);
+    lastWrittenJson = null;
     settings = previous;
-    renderCleanup();
-    renderKeywords();
-    cleanBtn?.refresh();
+    renderAll();
     showToast(t("statusSaveFailed"), "error", 2400);
     return false;
   }
 }
 
 function renderKeywords(): void {
-  const list = $<HTMLUListElement>("#kwList");
-  const empty = $<HTMLParagraphElement>("#kwEmpty");
+  els.activeKwCount.textContent = String(settings.keywords.filter((k) => k.enabled).length);
 
-  $<HTMLElement>("#activeKwCount").textContent = String(
-    settings.keywords.filter((k) => k.enabled).length,
-  );
-
-  list.innerHTML = "";
+  els.kwList.replaceChildren();
   if (settings.keywords.length === 0) {
-    empty.classList.remove("hidden");
+    els.kwEmpty.classList.remove("hidden");
     return;
   }
-  empty.classList.add("hidden");
+  els.kwEmpty.classList.add("hidden");
 
   for (const kw of settings.keywords) {
-    list.appendChild(renderKeywordRow(kw));
+    els.kwList.appendChild(renderKeywordRow(kw));
   }
 }
 
@@ -89,10 +106,14 @@ function renderKeywordRow(kw: Keyword): HTMLLIElement {
 
   const toggle = document.createElement("label");
   toggle.className = "switch";
-  toggle.innerHTML = `<input type="checkbox" ${kw.enabled ? "checked" : ""} /><span class="slider"></span>`;
-  toggle.querySelector("input")!.addEventListener("change", async (e) => {
-    const checked = (e.target as HTMLInputElement).checked;
-    await commit(setKeywordEnabled(settings, kw.id, checked));
+  const checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
+  checkbox.checked = kw.enabled;
+  const slider = document.createElement("span");
+  slider.className = "slider";
+  toggle.append(checkbox, slider);
+  checkbox.addEventListener("change", async () => {
+    await commit(setKeywordEnabled(settings, kw.id, checkbox.checked));
   });
   li.appendChild(toggle);
 
@@ -126,56 +147,45 @@ function beginEdit(span: HTMLSpanElement, id: string): void {
 }
 
 function renderCleanup(): void {
-  $<HTMLInputElement>("#enabled").checked = settings.enabled;
-  $<HTMLInputElement>("#intervalEnabled").checked = settings.cleanup.intervalEnabled;
-  $<HTMLInputElement>("#intervalHours").value = String(settings.cleanup.intervalHours);
-  $<HTMLInputElement>("#onStartup").checked = settings.cleanup.onStartup;
-  $<HTMLInputElement>("#olderThanDays").value = String(settings.cleanup.olderThanDays);
+  els.enabled.checked = settings.enabled;
+  els.intervalEnabled.checked = settings.cleanup.intervalEnabled;
+  els.intervalHours.value = String(settings.cleanup.intervalHours);
+  els.onStartup.checked = settings.cleanup.onStartup;
+  els.olderThanDays.value = String(settings.cleanup.olderThanDays);
   for (const radio of document.querySelectorAll<HTMLInputElement>('input[name="scope"]')) {
     radio.checked = radio.value === settings.cleanup.scope;
   }
 
-  const locale = chrome.i18n?.getUILanguage?.() ?? "en";
-  $<HTMLSpanElement>("#lastClean").textContent = formatTimestamp(
-    settings.lastCleanAt,
-    locale,
-    t("popupNever"),
-  );
+  els.lastClean.textContent = formatTimestamp(settings.lastCleanAt, getUILocale(), t("popupNever"));
 }
 
 function wireCleanupInputs(): void {
-  $<HTMLInputElement>("#enabled").addEventListener("change", async (e) => {
-    await commit({ ...settings, enabled: (e.target as HTMLInputElement).checked });
+  els.enabled.addEventListener("change", async () => {
+    await commit({ ...settings, enabled: els.enabled.checked });
   });
 
-  $<HTMLInputElement>("#intervalEnabled").addEventListener("change", async (e) => {
-    await commit(
-      setCleanupConfig(settings, { intervalEnabled: (e.target as HTMLInputElement).checked }),
-    );
+  els.intervalEnabled.addEventListener("change", async () => {
+    await commit(setCleanupConfig(settings, { intervalEnabled: els.intervalEnabled.checked }));
   });
 
-  $<HTMLInputElement>("#intervalHours").addEventListener("change", async (e) => {
-    const v = parseInt((e.target as HTMLInputElement).value, 10);
+  els.intervalHours.addEventListener("change", async () => {
+    const v = parseInt(els.intervalHours.value, 10);
     await commit(setCleanupConfig(settings, { intervalHours: v }));
-    renderCleanup();
   });
 
-  $<HTMLInputElement>("#onStartup").addEventListener("change", async (e) => {
-    await commit(setCleanupConfig(settings, { onStartup: (e.target as HTMLInputElement).checked }));
+  els.onStartup.addEventListener("change", async () => {
+    await commit(setCleanupConfig(settings, { onStartup: els.onStartup.checked }));
   });
 
-  $<HTMLInputElement>("#olderThanDays").addEventListener("change", async (e) => {
-    const v = parseInt((e.target as HTMLInputElement).value, 10);
+  els.olderThanDays.addEventListener("change", async () => {
+    const v = parseInt(els.olderThanDays.value, 10);
     await commit(setCleanupConfig(settings, { olderThanDays: v }));
-    renderCleanup();
-    cleanBtn?.refresh();
   });
 
   for (const radio of document.querySelectorAll<HTMLInputElement>('input[name="scope"]')) {
     radio.addEventListener("change", async (e) => {
       const value = (e.target as HTMLInputElement).value as CleanupScope;
       await commit(setCleanupConfig(settings, { scope: value }));
-      cleanBtn?.refresh();
     });
   }
 }
@@ -217,14 +227,12 @@ async function handleImportFile(file: File): Promise<void> {
   if (mode === "merge") {
     const result = mergeKeywords(settings, parsed);
     if (await commit(result.next)) {
-      renderKeywords();
       showToast(t("importDoneMerge", [String(result.added), String(result.skipped)]));
     }
     return;
   }
 
   if (await commit(replaceKeywords(settings, parsed))) {
-    renderKeywords();
     showToast(t("importDoneReplace", [String(parsed.length)]));
   }
 }
@@ -286,15 +294,32 @@ function wireKeywordForm(): void {
     }
     if (await commit(next)) {
       input.value = "";
-      renderKeywords();
     }
   });
 }
 
+function cacheEls(): Els {
+  return {
+    enabled: $<HTMLInputElement>("#enabled"),
+    intervalEnabled: $<HTMLInputElement>("#intervalEnabled"),
+    intervalHours: $<HTMLInputElement>("#intervalHours"),
+    onStartup: $<HTMLInputElement>("#onStartup"),
+    olderThanDays: $<HTMLInputElement>("#olderThanDays"),
+    lastClean: $<HTMLSpanElement>("#lastClean"),
+    saveStatus: $<HTMLElement>("#saveStatus"),
+    saveStatusText: $<HTMLElement>("#saveStatusText"),
+    kwList: $<HTMLUListElement>("#kwList"),
+    kwEmpty: $<HTMLParagraphElement>("#kwEmpty"),
+    activeKwCount: $<HTMLElement>("#activeKwCount"),
+  };
+}
+
 async function init(): Promise<void> {
   applyI18n();
+  els = cacheEls();
   $<HTMLElement>("#appVersion").textContent = `v${pkg.version}`;
   settings = await loadSettings();
+  lastWrittenJson = JSON.stringify(settings);
   renderCleanup();
   renderKeywords();
   wireCleanupInputs();
@@ -306,15 +331,16 @@ async function init(): Promise<void> {
     getSettings: () => settings,
     runCleanup: async () => {
       const r = await chrome.runtime.sendMessage({ type: "histsieve.cleanNow" });
-      return { ok: Boolean(r?.ok) };
+      return { ok: Boolean(r?.ok), truncated: Boolean(r?.sweepTruncated) };
     },
   });
 
   onSettingsChanged((next) => {
+    const nextJson = JSON.stringify(next);
     settings = next;
-    renderCleanup();
-    renderKeywords();
-    cleanBtn?.refresh();
+    if (nextJson === lastWrittenJson) return;
+    lastWrittenJson = nextJson;
+    renderAll();
   });
 }
 

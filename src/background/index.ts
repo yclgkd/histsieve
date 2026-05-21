@@ -16,11 +16,19 @@ import { handleRuntimeMessage } from "./messages";
 import { ALARM_NAME, syncAlarms } from "./scheduler";
 
 let cachedSettings: Settings | null = null;
+let inFlightLoad: Promise<Settings> | null = null;
 
 async function getSettings(): Promise<Settings> {
   if (cachedSettings) return cachedSettings;
-  cachedSettings = await loadSettings();
-  return cachedSettings;
+  if (!inFlightLoad) {
+    inFlightLoad = loadSettings().finally(() => {
+      inFlightLoad = null;
+    });
+  }
+  const loaded = await inFlightLoad;
+  if (cachedSettings) return cachedSettings;
+  cachedSettings = loaded;
+  return loaded;
 }
 
 const executeCleanup = createCleanupExecutor({
@@ -35,6 +43,13 @@ const executeCleanup = createCleanupExecutor({
   searchHistory,
   now: () => Date.now(),
 });
+
+async function bootstrap(): Promise<Settings> {
+  const settings = await loadSettings();
+  cachedSettings = settings;
+  await syncAlarms(settings, { createAlarm, clearAlarm });
+  return settings;
+}
 
 onSettingsChanged((next) => {
   cachedSettings = next;
@@ -53,24 +68,26 @@ chrome.history.onVisited.addListener((item) => {
 });
 
 chrome.runtime.onInstalled.addListener(async (details) => {
-  cachedSettings = await loadSettings();
-  await syncAlarms(cachedSettings, { createAlarm, clearAlarm });
+  await bootstrap();
   if (details.reason === "install") {
     void chrome.runtime.openOptionsPage();
   }
 });
 
 chrome.runtime.onStartup.addListener(async () => {
-  cachedSettings = await loadSettings();
-  await syncAlarms(cachedSettings, { createAlarm, clearAlarm });
-  if (cachedSettings.cleanup.onStartup) {
+  const settings = await bootstrap();
+  if (settings.cleanup.onStartup) {
     await executeCleanup();
   }
 });
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name !== ALARM_NAME) return;
-  await executeCleanup();
+  try {
+    await executeCleanup();
+  } catch (err) {
+    console.warn("[histsieve] scheduled cleanup failed", err);
+  }
 });
 
 chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {

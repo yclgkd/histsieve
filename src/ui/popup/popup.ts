@@ -2,7 +2,7 @@ import type { Settings } from "@/core/types";
 import { loadSettings, onSettingsChanged, saveSettings } from "@/platform/chrome";
 import { attachCleanButton, type CleanButtonHandle } from "@/ui/shared/clean-button";
 import { formatTimestamp } from "@/ui/shared/format";
-import { applyI18n, t } from "@/ui/shared/i18n";
+import { applyI18n, getUILocale, t } from "@/ui/shared/i18n";
 
 const $ = <T extends Element>(sel: string): T => {
   const el = document.querySelector<T>(sel);
@@ -17,10 +17,9 @@ function render(): void {
   $<HTMLSpanElement>("#kwCount").textContent = String(
     settings.keywords.filter((k) => k.enabled).length,
   );
-  const locale = chrome.i18n?.getUILanguage?.() ?? "en";
   $<HTMLSpanElement>("#lastClean").textContent = formatTimestamp(
     settings.lastCleanAt,
-    locale,
+    getUILocale(),
     t("popupNever"),
   );
 }
@@ -40,7 +39,7 @@ async function init(): Promise<void> {
     getSettings: () => settings,
     runCleanup: async () => {
       const response = await chrome.runtime.sendMessage({ type: "histsieve.cleanNow" });
-      return { ok: Boolean(response?.ok) };
+      return { ok: Boolean(response?.ok), truncated: Boolean(response?.sweepTruncated) };
     },
   });
 

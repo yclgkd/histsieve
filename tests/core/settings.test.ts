@@ -27,8 +27,13 @@ describe("DEFAULT_SETTINGS", () => {
     expect(DEFAULT_SETTINGS.lastCleanAt).toBeNull();
   });
 
-  it("is deeply immutable in the type sense (no shared keyword array)", () => {
-    expect(DEFAULT_SETTINGS.keywords.length).toBe(0);
+  it("freezes shared defaults so callers cannot mutate them", () => {
+    expect(Object.isFrozen(DEFAULT_SETTINGS)).toBe(true);
+    expect(Object.isFrozen(DEFAULT_SETTINGS.keywords)).toBe(true);
+    expect(Object.isFrozen(DEFAULT_SETTINGS.cleanup)).toBe(true);
+    expect(() => {
+      (DEFAULT_SETTINGS.keywords as Keyword[]).push({ id: "x", value: "x", enabled: true });
+    }).toThrow(TypeError);
   });
 });
 
@@ -146,6 +151,16 @@ describe("updateKeywordValue", () => {
     const id = a.keywords[0]!.id;
     const upd = updateKeywordValue(a, id, "   ");
     expect(upd).toBe(a);
+  });
+
+  it("rejects duplicate values when editing", () => {
+    const a = addKeyword(addKeyword(DEFAULT_SETTINGS, "youtube.com"), "github.com");
+    const githubId = a.keywords[1]!.id;
+
+    const upd = updateKeywordValue(a, githubId, "  YOUTUBE.com  ");
+
+    expect(upd).toBe(a);
+    expect(upd.keywords.map((k) => k.value)).toEqual(["youtube.com", "github.com"]);
   });
 });
 

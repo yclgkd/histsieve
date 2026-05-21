@@ -4,7 +4,7 @@ import { DEFAULT_SETTINGS, setCleanupConfig } from "@/core/settings";
 
 const NOW = 1_700_000_000_000;
 
-function makeDeps(overrides: Record<string, unknown> = {}) {
+function makeDeps(overrides: Partial<Parameters<typeof createCleanupExecutor>[0]> = {}) {
   let settings = setCleanupConfig(DEFAULT_SETTINGS, { scope: "olderThan", olderThanDays: 7 });
   return {
     getSettings: vi.fn(async () => settings),
@@ -39,8 +39,16 @@ describe("createCleanupExecutor", () => {
     expect(second).toBe(first);
     await vi.waitFor(() => expect(deps.deleteRange).toHaveBeenCalledOnce());
     finishDeleteRange();
-    await expect(first).resolves.toEqual({ cleanedAt: NOW, deletedByKeyword: 0 });
-    await expect(second).resolves.toEqual({ cleanedAt: NOW, deletedByKeyword: 0 });
+    await expect(first).resolves.toEqual({
+      cleanedAt: NOW,
+      deletedByKeyword: 0,
+      sweepTruncated: false,
+    });
+    await expect(second).resolves.toEqual({
+      cleanedAt: NOW,
+      deletedByKeyword: 0,
+      sweepTruncated: false,
+    });
     expect(deps.saveSettings).toHaveBeenCalledOnce();
   });
 
@@ -60,6 +68,8 @@ describe("createCleanupExecutor", () => {
       olderThanDays: 7,
     });
     const latestSettings = { ...firstSettings, enabled: false };
+    // The executor re-reads settings before writing lastCleanAt; the 2nd read
+    // returns latestSettings to simulate a change landing mid-cleanup.
     const deps = makeDeps({
       getSettings: vi
         .fn()

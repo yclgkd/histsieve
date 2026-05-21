@@ -1,16 +1,18 @@
 import { normalizeKeywordValue } from "./matcher";
 import type { CleanupConfig, Keyword, Settings } from "./types";
 
+// Frozen so accidental mutation of the shared default throws at runtime.
+// Cast to the mutable Settings type because every consumer copies before editing.
 export const DEFAULT_SETTINGS: Settings = Object.freeze({
   enabled: true,
-  keywords: [],
+  keywords: Object.freeze([]),
   cleanup: Object.freeze({
     intervalEnabled: true,
     intervalHours: 24,
     onStartup: true,
     scope: "olderThan",
     olderThanDays: 30,
-  }) as CleanupConfig,
+  }),
   lastCleanAt: null,
 }) as Settings;
 
@@ -125,6 +127,11 @@ export function setKeywordEnabled(settings: Settings, id: string, enabled: boole
 export function updateKeywordValue(settings: Settings, id: string, value: string): Settings {
   const trimmed = sanitizeKeywordValue(value);
   if (trimmed === null) return settings;
+  const normalizedNext = normalizeKeywordValue(trimmed);
+  const exists = settings.keywords.some(
+    (k) => k.id !== id && normalizeKeywordValue(k.value) === normalizedNext,
+  );
+  if (exists) return settings;
   const next = settings.keywords.map((k) => (k.id === id ? { ...k, value: trimmed } : k));
   return { ...settings, keywords: next };
 }

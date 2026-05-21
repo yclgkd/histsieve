@@ -20,8 +20,6 @@ export async function handleVisit(visit: VisitItem, deps: KeywordWatcherDeps): P
 
   const settings = await deps.getSettings();
   if (!settings.enabled) return;
-  if (settings.keywords.length === 0) return;
-
   if (!matchesAnyKeyword(visit.url, visit.title, settings.keywords)) return;
 
   try {

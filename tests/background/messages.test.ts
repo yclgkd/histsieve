@@ -6,7 +6,13 @@ describe("handleRuntimeMessage", () => {
     const sendResponse = vi.fn();
     const handled = handleRuntimeMessage(
       { type: "other.message" },
-      { executeCleanup: vi.fn(async () => ({ cleanedAt: null, deletedByKeyword: 0 })) },
+      {
+        executeCleanup: vi.fn(async () => ({
+          cleanedAt: null,
+          deletedByKeyword: 0,
+          sweepTruncated: false,
+        })),
+      },
       sendResponse,
     );
 
@@ -18,7 +24,13 @@ describe("handleRuntimeMessage", () => {
     const sendResponse = vi.fn();
     const handled = handleRuntimeMessage(
       { type: "histsieve.cleanNow" },
-      { executeCleanup: vi.fn(async () => ({ cleanedAt: 123, deletedByKeyword: 2 })) },
+      {
+        executeCleanup: vi.fn(async () => ({
+          cleanedAt: 123,
+          deletedByKeyword: 2,
+          sweepTruncated: false,
+        })),
+      },
       sendResponse,
     );
 
@@ -28,6 +40,7 @@ describe("handleRuntimeMessage", () => {
         ok: true,
         cleanedAt: 123,
         deletedByKeyword: 2,
+        sweepTruncated: false,
       }),
     );
   });

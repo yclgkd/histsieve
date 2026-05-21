@@ -3,6 +3,11 @@ export function t(key: string, substitutions?: string | string[]): string {
   return chrome.i18n.getMessage(key, substitutions) || key;
 }
 
+export function getUILocale(): string {
+  if (typeof chrome === "undefined" || !chrome.i18n?.getUILanguage) return "en";
+  return chrome.i18n.getUILanguage();
+}
+
 export function applyI18n(root: ParentNode = document): void {
   const nodes = root.querySelectorAll<HTMLElement>("[data-i18n]");
   for (const node of nodes) {

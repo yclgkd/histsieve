@@ -15,7 +15,7 @@ export type CleanButtonHandle = {
 export type CleanButtonOptions = {
   button: HTMLButtonElement;
   getSettings: () => Settings;
-  runCleanup: () => Promise<{ ok: boolean }>;
+  runCleanup: () => Promise<{ ok: boolean; truncated?: boolean }>;
   confirmTimeoutMs?: number;
   successRevertMs?: number;
   failureRevertMs?: number;
@@ -103,7 +103,8 @@ export function attachCleanButton(opts: CleanButtonOptions): CleanButtonHandle {
       inFlight = false;
       button.disabled = false;
       if (response.ok) {
-        showOutcome("success", t("popupCleanedOk"), successRevertMs);
+        const text = response.truncated ? t("popupCleanedPartial") : t("popupCleanedOk");
+        showOutcome("success", text, successRevertMs);
       } else {
         showOutcome("error", t("popupCleanedFail"), failureRevertMs);
       }
@@ -114,8 +115,7 @@ export function attachCleanButton(opts: CleanButtonOptions): CleanButtonHandle {
     }
   };
 
-  button.addEventListener("click", async (event) => {
-    event.preventDefault();
+  button.addEventListener("click", async () => {
     if (inFlight) return;
     const s = getSettings();
     if (s.cleanup.scope === "all" && !confirming) {

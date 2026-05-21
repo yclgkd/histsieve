@@ -10,9 +10,16 @@ describe("formatTimestamp", () => {
     expect(formatTimestamp(Number.NaN, "en-US", "never")).toBe("never");
   });
 
-  it("returns a formatted string for valid timestamps", () => {
-    const out = formatTimestamp(1_700_000_000_000, "en-US", "never");
+  it("formats a valid timestamp into a locale date string", () => {
+    const ts = Date.UTC(2023, 10, 14, 22, 13, 20);
+    const out = formatTimestamp(ts, "en-US", "never");
     expect(out).not.toBe("never");
-    expect(out.length).toBeGreaterThan(0);
+    // Within any real timezone offset the date stays on 2023-11-14/15.
+    expect(out).toContain("2023");
+  });
+
+  it("falls back to the ISO string when the locale is invalid", () => {
+    const ts = Date.UTC(2023, 10, 14, 22, 13, 20);
+    expect(formatTimestamp(ts, "!!invalid!!", "never")).toBe(new Date(ts).toISOString());
   });
 });
