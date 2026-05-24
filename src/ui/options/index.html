@@ -60,11 +60,11 @@
         </label>
 
         <fieldset class="scope">
-          <legend data-i18n="cfgScope">Cleanup scope</legend>
+          <legend data-i18n="cfgScope">History to delete</legend>
           <div class="row">
             <label class="inline-control">
               <input type="radio" name="scope" value="olderThan" />
-              <span id="olderThanDaysPrefix" data-i18n="cfgScopeOlder">Only entries older than</span>
+              <span id="olderThanDaysPrefix" data-i18n="cfgScopeOlder">History older than</span>
             </label>
             <input
               id="olderThanDays"
@@ -80,7 +80,7 @@
           </div>
           <label class="row">
             <input type="radio" name="scope" value="all" />
-            <span data-i18n="cfgScopeAll">All history</span>
+            <span data-i18n="cfgScopeAll">All browser history</span>
           </label>
         </fieldset>
 
@@ -100,8 +100,8 @@
             >
               Show keywords
             </button>
-            <button id="kwExport" type="button" class="icon-btn" data-i18n="btnExport">Export</button>
             <button id="kwImport" type="button" class="icon-btn" data-i18n="btnImport">Import</button>
+            <button id="kwExport" type="button" class="icon-btn" data-i18n="btnExport">Export</button>
             <input id="kwImportFile" type="file" accept="application/json,.json" hidden />
           </div>
         </div>

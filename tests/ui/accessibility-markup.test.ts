@@ -42,6 +42,16 @@ describe("static accessibility markup", () => {
     );
   });
 
+  it("places keyword import before export", () => {
+    document.documentElement.innerHTML = readProjectFile("src/ui/options/index.html");
+
+    const buttonIds = Array.from(document.querySelectorAll<HTMLButtonElement>(".kw-io button")).map(
+      (button) => button.id,
+    );
+
+    expect(buttonIds.indexOf("kwImport")).toBeLessThan(buttonIds.indexOf("kwExport"));
+  });
+
   it("does not add unused form names to popup controls", () => {
     document.documentElement.innerHTML = readProjectFile("src/ui/popup/index.html");
 

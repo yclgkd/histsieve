@@ -84,7 +84,8 @@ input:focus-visible {
   grid-template-columns: 1fr auto;
   align-items: center;
   gap: 18px;
-  padding: 4px 2px 0;
+  padding: 4px 2px 14px;
+  border-bottom: 1px solid var(--border);
 }
 
 .page__title {
@@ -106,12 +107,8 @@ input:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 30px;
-  padding: 5px 10px;
   color: var(--muted-strong);
-  background: var(--surface-strong);
-  border: 1px solid rgba(47, 111, 235, 0.14);
-  border-radius: 999px;
+  font-size: 14px;
   white-space: nowrap;
 }
 
@@ -126,20 +123,10 @@ input:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  min-height: 36px;
-  padding: 6px 8px 6px 12px;
+  min-height: 30px;
   color: var(--muted-strong);
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid var(--border);
-  border-radius: 999px;
   cursor: pointer;
   user-select: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  .enable-toggle {
-    background: rgba(17, 24, 39, 0.72);
-  }
 }
 
 .enable-toggle__label {

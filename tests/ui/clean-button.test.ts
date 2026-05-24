@@ -15,8 +15,8 @@ const installChrome = (messages: Record<string, string>) => {
 };
 
 const baseMessages = {
-  btnCleanAll: "Delete all history",
-  btnCleanOlder: "Delete entries older than $1$ days",
+  btnCleanAll: "Delete all browser history",
+  btnCleanOlder: "Delete history older than $1$ days",
   btnConfirmAll: "Click again to confirm",
   popupCleaning: "Cleaning…",
   popupCleanedOk: "Done.",
@@ -34,12 +34,12 @@ describe("getCleanButtonText", () => {
 
   it("returns 'all history' text when scope=all", () => {
     const s = setCleanupConfig(DEFAULT_SETTINGS, { scope: "all" });
-    expect(getCleanButtonText(s)).toBe("Delete all history");
+    expect(getCleanButtonText(s)).toBe("Delete all browser history");
   });
 
   it("returns templated 'older than N days' text when scope=olderThan", () => {
     const s = setCleanupConfig(DEFAULT_SETTINGS, { scope: "olderThan", olderThanDays: 7 });
-    expect(getCleanButtonText(s)).toBe("Delete entries older than 7 days");
+    expect(getCleanButtonText(s)).toBe("Delete history older than 7 days");
   });
 });
 
@@ -59,7 +59,7 @@ describe("attachCleanButton", () => {
         setCleanupConfig(DEFAULT_SETTINGS, { scope: "olderThan", olderThanDays: 14 }),
       runCleanup: async () => ({ ok: true }),
     });
-    expect(button.textContent).toBe("Delete entries older than 14 days");
+    expect(button.textContent).toBe("Delete history older than 14 days");
     expect(button.classList.contains("danger")).toBe(false);
   });
 
@@ -70,7 +70,7 @@ describe("attachCleanButton", () => {
       getSettings: () => setCleanupConfig(DEFAULT_SETTINGS, { scope: "all" }),
       runCleanup: async () => ({ ok: true }),
     });
-    expect(button.textContent).toBe("Delete all history");
+    expect(button.textContent).toBe("Delete all browser history");
     expect(button.classList.contains("danger")).toBe(true);
   });
 
@@ -88,7 +88,7 @@ describe("attachCleanButton", () => {
     await vi.waitFor(() => expect(button.textContent).toBe("Done."));
     expect(button.classList.contains("success")).toBe(true);
     expect(runCleanup).toHaveBeenCalledOnce();
-    await vi.waitFor(() => expect(button.textContent).toBe("Delete entries older than 30 days"));
+    await vi.waitFor(() => expect(button.textContent).toBe("Delete history older than 30 days"));
     expect(button.classList.contains("success")).toBe(false);
   });
 
@@ -104,7 +104,7 @@ describe("attachCleanButton", () => {
     button.click();
     await vi.waitFor(() => expect(button.textContent).toBe("Partly cleaned."));
     expect(button.classList.contains("success")).toBe(true);
-    await vi.waitFor(() => expect(button.textContent).toBe("Delete entries older than 30 days"));
+    await vi.waitFor(() => expect(button.textContent).toBe("Delete history older than 30 days"));
     expect(button.classList.contains("success")).toBe(false);
   });
 
@@ -196,7 +196,7 @@ describe("attachCleanButton", () => {
     expect(button.classList.contains("confirming")).toBe(true);
     vi.advanceTimersByTime(150);
     expect(button.classList.contains("confirming")).toBe(false);
-    expect(button.textContent).toBe("Delete all history");
+    expect(button.textContent).toBe("Delete all browser history");
   });
 
   it("shows error state when runCleanup throws", async () => {
@@ -213,7 +213,7 @@ describe("attachCleanButton", () => {
     button.click();
     await vi.waitFor(() => expect(button.textContent).toBe("Cleanup failed."));
     expect(button.classList.contains("error")).toBe(true);
-    await vi.waitFor(() => expect(button.textContent).toBe("Delete entries older than 30 days"));
+    await vi.waitFor(() => expect(button.textContent).toBe("Delete history older than 30 days"));
   });
 
   it("shows error state when runCleanup returns ok=false", async () => {
@@ -238,10 +238,10 @@ describe("attachCleanButton", () => {
       getSettings: () => s,
       runCleanup: async () => ({ ok: true }),
     });
-    expect(button.textContent).toBe("Delete entries older than 7 days");
+    expect(button.textContent).toBe("Delete history older than 7 days");
     s = setCleanupConfig(DEFAULT_SETTINGS, { scope: "all" });
     handle.refresh();
-    expect(button.textContent).toBe("Delete all history");
+    expect(button.textContent).toBe("Delete all browser history");
     expect(button.classList.contains("danger")).toBe(true);
   });
 
@@ -261,7 +261,7 @@ describe("attachCleanButton", () => {
     handle.refresh();
 
     expect(button.classList.contains("confirming")).toBe(false);
-    expect(button.textContent).toBe("Delete entries older than 10 days");
+    expect(button.textContent).toBe("Delete history older than 10 days");
     expect(button.classList.contains("danger")).toBe(false);
   });
 

@@ -14,11 +14,11 @@
   "popupCleanedPartial": { "message": "Partly cleaned." },
   "popupCleanedFail": { "message": "Cleanup failed." },
   "popupOpenSettings": { "message": "Settings" },
-  "popupNever": { "message": "Never" },
+  "popupNever": { "message": "Not yet" },
 
-  "btnCleanAll": { "message": "Delete all history" },
+  "btnCleanAll": { "message": "Delete all browser history" },
   "btnCleanOlder": {
-    "message": "Delete entries older than $DAYS$ days",
+    "message": "Delete history older than $DAYS$ days",
     "placeholders": {
       "DAYS": { "content": "$1", "example": "30" }
     }
@@ -103,9 +103,9 @@
   "cfgIntervalHours": { "message": "Every" },
   "cfgHours": { "message": "hours" },
   "cfgOnStartup": { "message": "Run when the browser starts" },
-  "cfgScope": { "message": "Cleanup scope" },
-  "cfgScopeOlder": { "message": "Only entries older than" },
-  "cfgScopeAll": { "message": "All history" },
+  "cfgScope": { "message": "History to delete" },
+  "cfgScopeOlder": { "message": "History older than" },
+  "cfgScopeAll": { "message": "All browser history" },
   "cfgDays": { "message": "days" },
 
   "statusSaved": { "message": "Saved" },

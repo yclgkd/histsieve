@@ -17,14 +17,14 @@ const settings: Settings = {
 };
 
 const messages: Record<string, string> = {
-  btnCleanAll: "Delete all history",
-  btnCleanOlder: "Delete entries older than $1$ days",
+  btnCleanAll: "Delete all browser history",
+  btnCleanOlder: "Delete history older than $1$ days",
   btnConfirmAll: "Click again to confirm",
   popupCleaning: "Cleaning...",
   popupCleanedOk: "Done.",
   popupCleanedPartial: "Partly cleaned.",
   popupCleanedFail: "Cleanup failed.",
-  popupNever: "Never",
+  popupNever: "Not yet",
 };
 
 function setupDom(): void {

@@ -14,11 +14,11 @@
   "popupCleanedPartial": { "message": "部分清理完成。" },
   "popupCleanedFail": { "message": "清理失败。" },
   "popupOpenSettings": { "message": "设置" },
-  "popupNever": { "message": "从未" },
+  "popupNever": { "message": "尚未清理" },
 
-  "btnCleanAll": { "message": "删除全部历史" },
+  "btnCleanAll": { "message": "删除全部浏览历史" },
   "btnCleanOlder": {
-    "message": "删除 $DAYS$ 天前的历史",
+    "message": "删除超过 $DAYS$ 天的浏览历史",
     "placeholders": {
       "DAYS": { "content": "$1", "example": "30" }
     }
@@ -103,10 +103,10 @@
   "cfgIntervalHours": { "message": "每隔" },
   "cfgHours": { "message": "小时" },
   "cfgOnStartup": { "message": "浏览器启动时清理一次" },
-  "cfgScope": { "message": "清理范围" },
-  "cfgScopeOlder": { "message": "仅删除早于" },
-  "cfgScopeAll": { "message": "全部历史记录" },
-  "cfgDays": { "message": "天的记录" },
+  "cfgScope": { "message": "要删除的浏览历史" },
+  "cfgScopeOlder": { "message": "超过" },
+  "cfgScopeAll": { "message": "全部浏览历史" },
+  "cfgDays": { "message": "天的浏览历史" },
 
   "statusSaved": { "message": "已保存" },
   "statusSaveFailed": { "message": "保存失败，请重试。" },

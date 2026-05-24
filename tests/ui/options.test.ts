@@ -4,14 +4,14 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Settings } from "@/core/types";
 
 const messages: Record<string, string> = {
-  btnCleanAll: "Delete all history",
-  btnCleanOlder: "Delete entries older than $1$ days",
+  btnCleanAll: "Delete all browser history",
+  btnCleanOlder: "Delete history older than $1$ days",
   btnConfirmAll: "Click again to confirm",
   popupCleaning: "Cleaning...",
   popupCleanedOk: "Done.",
   popupCleanedPartial: "Partly cleaned.",
   popupCleanedFail: "Cleanup failed.",
-  popupNever: "Never",
+  popupNever: "Not yet",
   statusSaved: "Saved",
   statusSaveFailed: "Save failed.",
   hintClickToEdit: "Click to edit",
@@ -74,8 +74,8 @@ function setupDom(): void {
     <form id="kwForm"><input id="kwInput" /><button type="submit">Add</button></form>
     <p id="kwError"></p>
     <button id="kwPrivacyToggle" type="button"></button>
-    <button id="kwExport" type="button"></button>
     <button id="kwImport" type="button"></button>
+    <button id="kwExport" type="button"></button>
     <input id="kwImportFile" type="file" />
     <ul id="kwList"></ul>
     <p id="kwEmpty" class="hidden"></p>
