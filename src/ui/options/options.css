@@ -188,7 +188,6 @@ input:focus-visible {
 }
 
 .hint {
-  max-width: 620px;
   margin: 0;
   color: var(--muted);
   font-size: 13px;
@@ -248,7 +247,7 @@ input:focus-visible {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 46px;
+  min-height: 58px;
   padding: 8px 10px;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -313,10 +312,31 @@ input:focus-visible {
   background: var(--surface-strong);
 }
 
+.kw-list .icon-btn.danger {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 40px;
+  width: 40px;
+  min-height: 40px;
+  padding: 0;
+}
+
+.kw-list .icon-btn.danger:is(:hover, :focus-visible) {
+  border-color: rgba(201, 51, 51, 0.42);
+  color: var(--danger);
+  background: rgba(201, 51, 51, 0.08);
+}
+
 .icon-btn.danger:hover {
   border-color: rgba(201, 51, 51, 0.42);
   color: var(--danger);
   background: rgba(201, 51, 51, 0.08);
+}
+
+.trash-icon {
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
 }
 
 .empty {

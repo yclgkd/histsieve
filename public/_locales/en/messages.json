@@ -32,7 +32,6 @@
   "phKeyword": { "message": "e.g. youtube.com" },
   "keywordInputLabel": { "message": "Keyword" },
   "btnAdd": { "message": "Add" },
-  "btnDelete": { "message": "Delete" },
   "btnExport": { "message": "Export" },
   "btnImport": { "message": "Import" },
   "btnShowKeywords": { "message": "Show keywords" },
@@ -44,6 +43,7 @@
     "message": "No keywords yet — add your first one above. Try youtube.com, reddit.com, or any word you'd like wiped from history."
   },
   "hintClickToEdit": { "message": "Click to edit" },
+  "hintClickToReveal": { "message": "Click to reveal" },
   "keywordDuplicate": { "message": "Keyword already exists." },
   "keywordInvalid": { "message": "Keyword must be 1-200 characters." },
   "keywordToggleLabel": {
@@ -58,7 +58,7 @@
       "KEYWORD": { "content": "$1", "example": "youtube.com" }
     }
   },
-  "keywordHiddenEditLabel": { "message": "Edit hidden keyword" },
+  "keywordHiddenRevealLabel": { "message": "Reveal hidden keyword" },
   "keywordDeleteLabel": {
     "message": "Delete keyword: $KEYWORD$",
     "placeholders": {

@@ -15,14 +15,14 @@ const messages: Record<string, string> = {
   statusSaved: "Saved",
   statusSaveFailed: "Save failed.",
   hintClickToEdit: "Click to edit",
+  hintClickToReveal: "Click to reveal",
   keywordToggleLabel: "Enable keyword: $1$",
   keywordEditLabel: "Edit keyword: $1$",
-  keywordHiddenEditLabel: "Edit hidden keyword",
+  keywordHiddenRevealLabel: "Reveal hidden keyword",
   keywordDeleteLabel: "Delete keyword: $1$",
   keywordEditInputLabel: "Keyword value",
   btnShowKeywords: "Show keywords",
   btnHideKeywords: "Hide keywords",
-  btnDelete: "Delete",
   keywordDuplicate: "Keyword already exists.",
   keywordInvalid: "Keyword must be 1-200 characters.",
   importEmpty: "No valid keywords found in file.",
@@ -144,12 +144,26 @@ const exportFile = (keywords: { value: string; enabled: boolean }[]): string =>
   JSON.stringify({ type: "histsieve.keywords", version: 1, keywords });
 
 function clickAfterPotentialInputBlur(control: HTMLElement, input: HTMLInputElement): void {
-  const down = new MouseEvent("mousedown", { bubbles: true, cancelable: true });
-  control.dispatchEvent(down);
-  if (!down.defaultPrevented) {
-    input.dispatchEvent(new FocusEvent("blur", { bubbles: false, relatedTarget: control }));
-  }
+  control.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true }));
+  // Real browsers blur the input on mouseup when clicking a label-wrapped
+  // checkbox, even if mousedown.preventDefault was called. Simulate that here.
+  input.dispatchEvent(new FocusEvent("blur", { bubbles: false, relatedTarget: control }));
   control.click();
+}
+
+function rowAt(index: number): HTMLLIElement {
+  return document.querySelectorAll<HTMLLIElement>("#kwList li")[index]!;
+}
+
+function disclose(index = 0): HTMLLIElement {
+  rowAt(index).querySelector<HTMLButtonElement>(".keyword-value")!.click();
+  return rowAt(index);
+}
+
+function startEditAt(index = 0): HTMLInputElement {
+  disclose(index);
+  rowAt(index).querySelector<HTMLButtonElement>(".keyword-value")!.click();
+  return rowAt(index).querySelector<HTMLInputElement>("input[name='keyword-value']")!;
 }
 
 describe("options page", () => {
@@ -194,9 +208,11 @@ describe("options page", () => {
     expect(firstRow.querySelector<HTMLButtonElement>(".keyword-value")!.ariaLabel).toBe(
       "Edit keyword: youtube.com",
     );
-    expect(firstRow.querySelector<HTMLButtonElement>("button.danger")!.ariaLabel).toBe(
-      "Delete keyword: youtube.com",
-    );
+    const deleteButton = firstRow.querySelector<HTMLButtonElement>("button.danger")!;
+    expect(deleteButton.ariaLabel).toBe("Delete keyword: youtube.com");
+    expect(deleteButton.title).toBe("Delete keyword: youtube.com");
+    expect(deleteButton.textContent?.trim()).toBe("");
+    expect(deleteButton.querySelector("svg.trash-icon")).not.toBeNull();
   });
 
   it("hides keyword values by default until they are revealed", async () => {
@@ -214,7 +230,7 @@ describe("options page", () => {
     expect(toggle.textContent).toBe("Show keywords");
     expect(toggle.getAttribute("aria-pressed")).toBe("false");
     expect(document.querySelector<HTMLButtonElement>("#kwList li .keyword-value")!.ariaLabel).toBe(
-      "Edit hidden keyword",
+      "Reveal hidden keyword",
     );
     expect(document.querySelector("#kwList li input[type='checkbox']")).toBeNull();
     expect(document.querySelector("#kwList li button.danger")).toBeNull();
@@ -255,17 +271,17 @@ describe("options page", () => {
     expect(revealedRow.querySelector<HTMLButtonElement>("button.danger")!.disabled).toBe(false);
   });
 
-  it("shows management controls for the hidden keyword being edited", async () => {
+  it("discloses one hidden row on first click without entering edit mode", async () => {
     setupChrome();
     setupDom();
     await loadOptions(baseSettings());
 
-    document.querySelector<HTMLButtonElement>("#kwList li .keyword-value")!.click();
+    disclose(0);
 
-    const rows = document.querySelectorAll<HTMLLIElement>("#kwList li");
-    const firstRow = rows[0]!;
-    const secondRow = rows[1]!;
-    expect(firstRow.querySelector<HTMLInputElement>("input[name='keyword-value']")!.value).toBe(
+    const firstRow = rowAt(0);
+    const secondRow = rowAt(1);
+    expect(firstRow.querySelector("input[name='keyword-value']")).toBeNull();
+    expect(firstRow.querySelector<HTMLButtonElement>(".keyword-value")!.textContent).toBe(
       "youtube.com",
     );
     expect(firstRow.querySelector<HTMLInputElement>("input[type='checkbox']")!.ariaLabel).toBe(
@@ -278,55 +294,79 @@ describe("options page", () => {
     expect(secondRow.querySelector("button.danger")).toBeNull();
   });
 
-  it("toggles the hidden keyword being edited", async () => {
+  it("enters edit mode on second click of the disclosed value", async () => {
+    setupChrome();
+    setupDom();
+    await loadOptions(baseSettings());
+
+    const input = startEditAt(0);
+    expect(input.value).toBe("youtube.com");
+    expect(document.activeElement).toBe(input);
+  });
+
+  it("toggles a disclosed keyword on a single click (no edit mode)", async () => {
     setupChrome();
     setupDom();
     const { saveSettings } = await loadOptions(baseSettings());
 
-    document.querySelector<HTMLButtonElement>("#kwList li .keyword-value")!.click();
-    const input = document.querySelector<HTMLInputElement>(
-      "#kwList li input[name='keyword-value']",
-    )!;
-    const checkbox = document.querySelector<HTMLInputElement>("#kwList li input[type='checkbox']")!;
-
-    clickAfterPotentialInputBlur(checkbox, input);
+    disclose(0);
+    const checkbox = rowAt(0).querySelector<HTMLInputElement>("input[type='checkbox']")!;
+    checkbox.click();
 
     await vi.waitFor(() =>
       expect(saveSettings.mock.calls.at(-1)![0].keywords[0].enabled).toBe(false),
     );
   });
 
-  it("keeps the edit input active when toggling the hidden keyword being edited", async () => {
+  it("keeps the edit input active when toggling the switch in edit mode", async () => {
     setupChrome();
     setupDom();
     const { saveSettings } = await loadOptions(baseSettings());
 
-    document.querySelector<HTMLButtonElement>("#kwList li .keyword-value")!.click();
-    const input = document.querySelector<HTMLInputElement>(
-      "#kwList li input[name='keyword-value']",
-    )!;
+    const input = startEditAt(0);
     input.value = "draft.example";
-    const checkbox = document.querySelector<HTMLInputElement>("#kwList li input[type='checkbox']")!;
+    const checkbox = rowAt(0).querySelector<HTMLInputElement>("input[type='checkbox']")!;
 
     clickAfterPotentialInputBlur(checkbox, input);
 
     await vi.waitFor(() => expect(saveSettings).toHaveBeenCalled());
-    expect(input.isConnected).toBe(true);
-    expect(input.value).toBe("draft.example");
+    // After commit, the input was swapped for a value button locally.
+    const valueBtn = rowAt(0).querySelector<HTMLButtonElement>(".keyword-value")!;
+    expect(valueBtn.textContent).toBe("draft.example");
+    // Row is still disclosed (switch + value-button + delete still present).
+    expect(rowAt(0).querySelector("input[type='checkbox']")).not.toBeNull();
+    expect(rowAt(0).querySelector("button.danger")).not.toBeNull();
   });
 
-  it("deletes the hidden keyword being edited", async () => {
+  it("toggles on every switch click without collapsing the row", async () => {
     setupChrome();
     setupDom();
     const { saveSettings } = await loadOptions(baseSettings());
 
-    document.querySelector<HTMLButtonElement>("#kwList li .keyword-value")!.click();
-    const input = document.querySelector<HTMLInputElement>(
-      "#kwList li input[name='keyword-value']",
-    )!;
-    const deleteButton = document.querySelector<HTMLButtonElement>("#kwList li button.danger")!;
+    disclose(0);
+    let checkbox = rowAt(0).querySelector<HTMLInputElement>("input[type='checkbox']")!;
+    checkbox.click();
+    await vi.waitFor(() =>
+      expect(saveSettings.mock.calls.at(-1)![0].keywords[0].enabled).toBe(false),
+    );
 
-    clickAfterPotentialInputBlur(deleteButton, input);
+    checkbox = rowAt(0).querySelector<HTMLInputElement>("input[type='checkbox']")!;
+    checkbox.click();
+    await vi.waitFor(() =>
+      expect(saveSettings.mock.calls.at(-1)![0].keywords[0].enabled).toBe(true),
+    );
+
+    // Row remains disclosed after both toggles.
+    expect(rowAt(0).classList.contains("masked")).toBe(false);
+  });
+
+  it("deletes a disclosed keyword on a single click of the delete button", async () => {
+    setupChrome();
+    setupDom();
+    const { saveSettings } = await loadOptions(baseSettings());
+
+    disclose(0);
+    rowAt(0).querySelector<HTMLButtonElement>("button.danger")!.click();
 
     await vi.waitFor(() => expect(document.querySelectorAll("#kwList li")).toHaveLength(1));
     expect(
@@ -334,15 +374,12 @@ describe("options page", () => {
     ).toEqual(["github.com"]);
   });
 
-  it("edits the real keyword value while keywords are hidden", async () => {
+  it("edits the real keyword value via two-click flow", async () => {
     setupChrome();
     setupDom();
     const { saveSettings } = await loadOptions(baseSettings());
 
-    document.querySelector<HTMLButtonElement>("#kwList li .keyword-value")!.click();
-    const input = document.querySelector<HTMLInputElement>(
-      "#kwList li input[name='keyword-value']",
-    )!;
+    const input = startEditAt(0);
     expect(input.value).toBe("youtube.com");
 
     input.value = "yt.example";
@@ -351,10 +388,48 @@ describe("options page", () => {
     await vi.waitFor(() =>
       expect(saveSettings.mock.calls.at(-1)![0].keywords[0].value).toBe("yt.example"),
     );
+    // Edit ends but the row stays disclosed (value button shows the new value).
     await vi.waitFor(() =>
-      expect(
-        document.querySelector<HTMLButtonElement>("#kwList li .keyword-value")!.textContent,
-      ).toBe("••••••"),
+      expect(rowAt(0).querySelector<HTMLButtonElement>(".keyword-value")!.textContent).toBe(
+        "yt.example",
+      ),
+    );
+  });
+
+  it("hides the disclosed row when a click happens outside it", async () => {
+    setupChrome();
+    setupDom();
+    await loadOptions(baseSettings());
+
+    disclose(0);
+    expect(rowAt(0).classList.contains("masked")).toBe(false);
+
+    document.querySelector<HTMLElement>("#appVersion")!.click();
+
+    await vi.waitFor(() =>
+      expect(rowAt(0).querySelector<HTMLButtonElement>(".keyword-value")!.textContent).toBe(
+        "••••••",
+      ),
+    );
+  });
+
+  it("swaps disclosure in a single click when another masked row is clicked", async () => {
+    setupChrome();
+    setupDom();
+    await loadOptions(baseSettings());
+
+    disclose(0);
+    expect(rowAt(0).querySelector("input[type='checkbox']")).not.toBeNull();
+    expect(rowAt(1).querySelector("input[type='checkbox']")).toBeNull();
+
+    // One click on row 1's masked button → row 0 hides, row 1 discloses.
+    rowAt(1).querySelector<HTMLButtonElement>(".keyword-value")!.click();
+
+    await vi.waitFor(() => expect(rowAt(1).querySelector("input[type='checkbox']")).not.toBeNull());
+    expect(rowAt(0).querySelector("input[type='checkbox']")).toBeNull();
+    expect(rowAt(0).querySelector<HTMLButtonElement>(".keyword-value")!.textContent).toBe("••••••");
+    expect(rowAt(1).querySelector<HTMLButtonElement>(".keyword-value")!.textContent).toBe(
+      "github.com",
     );
   });
 
@@ -380,96 +455,84 @@ describe("options page", () => {
     expect(toggle.getAttribute("aria-pressed")).toBe("true");
   });
 
-  it("does not hide revealed keywords while a keyword edit is active", async () => {
-    setupChrome();
-    setupDom();
-    await loadOptions(baseSettings());
-    vi.useFakeTimers();
-
-    document.querySelector<HTMLButtonElement>("#kwPrivacyToggle")!.click();
-    document.querySelector<HTMLButtonElement>("#kwList li .keyword-value")!.click();
-    const input = document.querySelector<HTMLInputElement>(
-      "#kwList li input[name='keyword-value']",
-    )!;
-    input.value = "unfinished.example";
-    expect(input.isConnected).toBe(true);
-
-    vi.advanceTimersByTime(60_000);
-
-    expect(input.isConnected).toBe(true);
-    expect(input.value).toBe("unfinished.example");
-    expect(document.querySelector<HTMLButtonElement>("#kwPrivacyToggle")!.textContent).toBe(
-      "Hide keywords",
-    );
-  });
-
-  it("hides revealed keywords after an edit completes when hiding was requested", async () => {
+  it("commits a global-visible keyword edit before hiding on window blur", async () => {
     setupChrome();
     setupDom();
     const { saveSettings } = await loadOptions(baseSettings());
 
     document.querySelector<HTMLButtonElement>("#kwPrivacyToggle")!.click();
-    document.querySelector<HTMLButtonElement>("#kwList li .keyword-value")!.click();
-    const input = document.querySelector<HTMLInputElement>(
-      "#kwList li input[name='keyword-value']",
-    )!;
+    rowAt(0).querySelector<HTMLButtonElement>(".keyword-value")!.click();
+    const input = rowAt(0).querySelector<HTMLInputElement>("input[name='keyword-value']")!;
     input.value = "yt.example";
 
     window.dispatchEvent(new Event("blur"));
-    expect(input.isConnected).toBe(true);
-
-    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
 
     await vi.waitFor(() =>
       expect(saveSettings.mock.calls.at(-1)![0].keywords[0].value).toBe("yt.example"),
     );
     await vi.waitFor(() =>
-      expect(document.querySelector<HTMLButtonElement>("#kwPrivacyToggle")!.textContent).toBe(
-        "Show keywords",
+      expect(rowAt(0).querySelector<HTMLButtonElement>(".keyword-value")!.textContent).toBe(
+        "••••••",
       ),
     );
-    expect(
-      document.querySelector<HTMLButtonElement>("#kwList li .keyword-value")!.textContent,
-    ).toBe("••••••");
   });
 
-  it("hides a single disclosed edit row after blur-requested editing completes", async () => {
+  it("hides a disclosed row and commits the pending edit when the window blurs", async () => {
     setupChrome();
     setupDom();
     const { saveSettings } = await loadOptions(baseSettings());
 
-    document.querySelector<HTMLButtonElement>("#kwList li .keyword-value")!.click();
-    const input = document.querySelector<HTMLInputElement>(
-      "#kwList li input[name='keyword-value']",
-    )!;
+    const input = startEditAt(0);
     input.value = "yt.example";
 
     window.dispatchEvent(new Event("blur"));
-    expect(input.isConnected).toBe(true);
-
-    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
 
     await vi.waitFor(() =>
       expect(saveSettings.mock.calls.at(-1)![0].keywords[0].value).toBe("yt.example"),
     );
     await vi.waitFor(() =>
-      expect(
-        document.querySelector<HTMLButtonElement>("#kwList li .keyword-value")!.textContent,
-      ).toBe("••••••"),
+      expect(rowAt(0).querySelector<HTMLButtonElement>(".keyword-value")!.textContent).toBe(
+        "••••••",
+      ),
     );
-    expect(document.querySelector("#kwList li input[type='checkbox']")).toBeNull();
-    expect(document.querySelector("#kwList li button.danger")).toBeNull();
+    expect(rowAt(0).querySelector("input[type='checkbox']")).toBeNull();
+    expect(rowAt(0).querySelector("button.danger")).toBeNull();
   });
 
-  it("edits a keyword through a keyboard-reachable button", async () => {
+  it("keeps an invalid keyword edit active when clicking outside", async () => {
     setupChrome();
     setupDom();
     const { saveSettings } = await loadOptions(baseSettings());
 
-    document.querySelector<HTMLButtonElement>("#kwList li .keyword-value")!.click();
-    const input = document.querySelector<HTMLInputElement>(
-      "#kwList li input[name='keyword-value']",
-    )!;
+    const input = startEditAt(0);
+    input.value = "github.com";
+    input.dispatchEvent(
+      new FocusEvent("blur", {
+        bubbles: false,
+        relatedTarget: document.querySelector("#appVersion"),
+      }),
+    );
+    document.querySelector<HTMLElement>("#appVersion")!.click();
+
+    await vi.waitFor(() =>
+      expect(document.querySelector("#kwError")!.textContent).toBe(
+        "Keyword must be 1-200 characters.",
+      ),
+    );
+    expect(rowAt(0).querySelector<HTMLInputElement>("input[name='keyword-value']")!.value).toBe(
+      "github.com",
+    );
+    expect(rowAt(0).querySelector("input[type='checkbox']")).not.toBeNull();
+    expect(rowAt(0).querySelector("button.danger")).not.toBeNull();
+    expect(saveSettings).not.toHaveBeenCalled();
+  });
+
+  it("commits a keyword edit when Enter is pressed", async () => {
+    setupChrome();
+    setupDom();
+    const { saveSettings } = await loadOptions(baseSettings());
+
+    const input = startEditAt(0);
     input.value = "gitlab.com";
     input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
 
@@ -530,11 +593,8 @@ describe("options page", () => {
     setupDom();
     const { saveSettings } = await loadOptions(baseSettings());
 
-    document.querySelector<HTMLButtonElement>("#kwList li .keyword-value")!.click();
-    const input = document.querySelector<HTMLInputElement>(
-      "#kwList li input[name='keyword-value']",
-    )!;
-    input.value = "github.com";
+    const input = startEditAt(0);
+    input.value = "github.com"; // duplicate of row 1
     input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
 
     await vi.waitFor(() =>

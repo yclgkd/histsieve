@@ -16,7 +16,6 @@ import { attachCleanButton, type CleanButtonHandle } from "@/ui/shared/clean-but
 import { formatTimestamp } from "@/ui/shared/format";
 import { applyI18n, getUILocale, t } from "@/ui/shared/i18n";
 import pkg from "../../../package.json";
-import { beginKeywordEdit } from "./editable-keyword";
 
 const $ = <T extends Element>(sel: string): T => {
   const el = document.querySelector<T>(sel);
@@ -46,12 +45,18 @@ let cleanBtn: CleanButtonHandle | null = null;
 let els: Els;
 let lastWrittenJson: string | null = null;
 let keywordsVisible = false;
-let keywordEditActive = false;
+// Per-row temporary disclosure: at most one row is revealed at a time.
+let disclosedKeywordId: string | null = null;
+// Edit mode: a subset of disclosure. Only set when the user clicks the value
+// text of an already-disclosed row.
 let editingKeywordId: string | null = null;
-let hideKeywordsAfterEdit = false;
 
 let savedHideTimer: number | null = null;
 const HIDDEN_KEYWORD_TEXT = "••••••";
+const SVG_NS = "http://www.w3.org/2000/svg";
+type PendingEditOptions = {
+  reportInvalid?: boolean;
+};
 
 function showToast(message: string, variant: "success" | "error" = "success", ms = 1800): void {
   els.saveStatusText.textContent = message;
@@ -88,14 +93,18 @@ function renderAll(): void {
   cleanBtn?.refresh();
 }
 
-function hideKeywords(): void {
-  if (!keywordsVisible) return;
-  if (keywordEditActive) {
-    hideKeywordsAfterEdit = true;
-    return;
+async function hideKeywords(options: { force?: boolean } = {}): Promise<void> {
+  const changed = keywordsVisible || disclosedKeywordId !== null || editingKeywordId !== null;
+  if (!changed) return;
+
+  if (editingKeywordId !== null) {
+    const ok = await commitPendingEdit({ reportInvalid: !options.force });
+    if (!ok && !options.force) return;
   }
+
   keywordsVisible = false;
-  hideKeywordsAfterEdit = false;
+  disclosedKeywordId = null;
+  editingKeywordId = null;
   renderKeywords();
 }
 
@@ -136,74 +145,133 @@ function renderKeywords(): void {
 }
 
 function isKeywordDisclosed(kw: Keyword): boolean {
-  return keywordsVisible || editingKeywordId === kw.id;
+  return keywordsVisible || disclosedKeywordId === kw.id;
 }
 
-function keepKeywordEditActiveOnMouseDown(e: MouseEvent, id: string): void {
-  if (keywordEditActive && editingKeywordId === id) e.preventDefault();
+function findRowLi(id: string): HTMLLIElement | null {
+  for (const li of els.kwList.querySelectorAll<HTMLLIElement>("li")) {
+    if (li.dataset.keywordId === id) return li;
+  }
+  return null;
+}
+
+function makeValueButton(kw: Keyword): HTMLButtonElement {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "keyword-value";
+  btn.dataset.keywordId = kw.id;
+  btn.textContent = kw.value;
+  btn.title = t("hintClickToEdit");
+  btn.setAttribute("aria-label", t("keywordEditLabel", [kw.value]));
+  btn.addEventListener("click", () => startEdit(kw.id));
+  return btn;
+}
+
+function makeMaskedButton(kw: Keyword): HTMLButtonElement {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "keyword-value";
+  btn.dataset.keywordId = kw.id;
+  btn.textContent = HIDDEN_KEYWORD_TEXT;
+  btn.title = t("hintClickToReveal");
+  btn.setAttribute("aria-label", t("keywordHiddenRevealLabel"));
+  btn.addEventListener("click", () => {
+    void discloseRow(kw.id);
+  });
+  return btn;
+}
+
+function makeEditInput(kw: Keyword): HTMLInputElement {
+  const input = document.createElement("input");
+  input.type = "text";
+  input.name = "keyword-value";
+  input.autocomplete = "off";
+  input.spellcheck = false;
+  input.maxLength = 200;
+  input.className = "keyword-edit";
+  input.value = kw.value;
+  input.setAttribute("aria-label", t("keywordEditInputLabel"));
+  input.setAttribute("aria-describedby", "kwError");
+  input.addEventListener("blur", () => {
+    void finishEdit(true);
+  });
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      void finishEdit(true);
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      void finishEdit(false);
+    }
+  });
+  return input;
+}
+
+function makeTrashIcon(): SVGSVGElement {
+  const icon = document.createElementNS(SVG_NS, "svg");
+  icon.classList.add("trash-icon");
+  icon.setAttribute("aria-hidden", "true");
+  icon.setAttribute("viewBox", "0 0 24 24");
+  icon.setAttribute("fill", "none");
+  icon.setAttribute("stroke", "currentColor");
+  icon.setAttribute("stroke-width", "2");
+  icon.setAttribute("stroke-linecap", "round");
+  icon.setAttribute("stroke-linejoin", "round");
+  for (const d of ["M3 6h18", "M8 6V4h8v2", "M19 6l-1 14H6L5 6", "M10 11v6", "M14 11v6"]) {
+    const path = document.createElementNS(SVG_NS, "path");
+    path.setAttribute("d", d);
+    icon.appendChild(path);
+  }
+  return icon;
 }
 
 function renderKeywordRow(kw: Keyword): HTMLLIElement {
   const li = document.createElement("li");
+  li.dataset.keywordId = kw.id;
   if (!kw.enabled) li.classList.add("disabled");
   const disclosed = isKeywordDisclosed(kw);
-  if (!disclosed) li.classList.add("masked");
 
-  if (disclosed) {
-    const toggle = document.createElement("label");
-    toggle.className = "switch";
-    toggle.addEventListener("mousedown", (e) => keepKeywordEditActiveOnMouseDown(e, kw.id));
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
-    checkbox.checked = kw.enabled;
-    checkbox.setAttribute("aria-label", t("keywordToggleLabel", [kw.value]));
-    const slider = document.createElement("span");
-    slider.className = "slider";
-    toggle.append(checkbox, slider);
-    checkbox.addEventListener("change", async () => {
-      const next = setKeywordEnabled(settings, kw.id, checkbox.checked);
-      if (keywordEditActive && editingKeywordId === kw.id) {
-        if (await commit(next, false)) {
-          li.classList.toggle("disabled", !checkbox.checked);
-          els.activeKwCount.textContent = String(settings.keywords.filter((k) => k.enabled).length);
-        }
-        return;
-      }
-      await commit(next);
-    });
-    li.appendChild(toggle);
+  if (!disclosed) {
+    li.classList.add("masked");
+    li.appendChild(makeMaskedButton(kw));
+    return li;
   }
 
-  const value = document.createElement("button");
-  value.type = "button";
-  value.className = "keyword-value";
-  value.dataset.keywordId = kw.id;
-  value.textContent = disclosed ? kw.value : HIDDEN_KEYWORD_TEXT;
-  value.title = t("hintClickToEdit");
-  value.setAttribute(
-    "aria-label",
-    disclosed ? t("keywordEditLabel", [kw.value]) : t("keywordHiddenEditLabel"),
-  );
-  value.addEventListener("click", () => beginEdit(value, kw.id));
-  li.appendChild(value);
+  const toggle = document.createElement("label");
+  toggle.className = "switch";
+  const checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
+  checkbox.checked = kw.enabled;
+  checkbox.setAttribute("aria-label", t("keywordToggleLabel", [kw.value]));
+  const slider = document.createElement("span");
+  slider.className = "slider";
+  toggle.append(checkbox, slider);
+  checkbox.addEventListener("change", async () => {
+    await commit(setKeywordEnabled(settings, kw.id, checkbox.checked));
+  });
+  li.appendChild(toggle);
 
-  if (disclosed) {
-    const del = document.createElement("button");
-    del.className = "icon-btn danger";
-    del.type = "button";
-    del.addEventListener("mousedown", (e) => keepKeywordEditActiveOnMouseDown(e, kw.id));
-    del.textContent = t("btnDelete");
-    del.setAttribute("aria-label", t("keywordDeleteLabel", [kw.value]));
-    del.addEventListener("click", async () => {
-      if (editingKeywordId === kw.id) {
-        keywordEditActive = false;
-        editingKeywordId = null;
-        hideKeywordsAfterEdit = false;
-      }
-      await commit(removeKeyword(settings, kw.id));
-    });
-    li.appendChild(del);
+  if (editingKeywordId === kw.id) {
+    li.appendChild(makeEditInput(kw));
+  } else {
+    li.appendChild(makeValueButton(kw));
   }
+
+  const del = document.createElement("button");
+  del.className = "icon-btn danger";
+  del.type = "button";
+  const deleteLabel = t("keywordDeleteLabel", [kw.value]);
+  del.title = deleteLabel;
+  del.setAttribute("aria-label", deleteLabel);
+  del.appendChild(makeTrashIcon());
+  del.addEventListener("click", async () => {
+    if (disclosedKeywordId === kw.id) {
+      disclosedKeywordId = null;
+      editingKeywordId = null;
+    }
+    await commit(removeKeyword(settings, kw.id));
+  });
+  li.appendChild(del);
 
   return li;
 }
@@ -211,60 +279,132 @@ function renderKeywordRow(kw: Keyword): HTMLLIElement {
 function renderKeywordPrivacyToggle(): void {
   if (settings.keywords.length === 0) {
     keywordsVisible = false;
+    disclosedKeywordId = null;
     editingKeywordId = null;
-    keywordEditActive = false;
-  } else if (editingKeywordId && !settings.keywords.some((kw) => kw.id === editingKeywordId)) {
+  } else if (
+    disclosedKeywordId !== null &&
+    !settings.keywords.some((kw) => kw.id === disclosedKeywordId)
+  ) {
+    disclosedKeywordId = null;
     editingKeywordId = null;
-    keywordEditActive = false;
   }
   els.kwPrivacyToggle.textContent = t(keywordsVisible ? "btnHideKeywords" : "btnShowKeywords");
   els.kwPrivacyToggle.setAttribute("aria-pressed", String(keywordsVisible));
   els.kwPrivacyToggle.disabled = settings.keywords.length === 0;
 }
 
-function beginEdit(button: HTMLButtonElement, id: string): void {
+async function discloseRow(id: string): Promise<void> {
   clearKeywordError();
-  const keyword = settings.keywords.find((k) => k.id === id);
-  if (!keyword) return;
+  if (disclosedKeywordId === id && editingKeywordId === null) return;
+  if (editingKeywordId !== null && editingKeywordId !== id) {
+    const ok = await commitPendingEdit();
+    if (!ok) return;
+  }
+  disclosedKeywordId = id;
+  editingKeywordId = null;
+  renderKeywords();
+}
 
-  if (!keywordsVisible && editingKeywordId !== id) {
-    editingKeywordId = id;
-    renderKeywords();
-    const nextButton = Array.from(
-      els.kwList.querySelectorAll<HTMLButtonElement>(".keyword-value"),
-    ).find((candidate) => candidate.dataset.keywordId === id);
-    if (nextButton) beginEdit(nextButton, id);
+function startEdit(id: string): void {
+  clearKeywordError();
+  if (editingKeywordId === id) return;
+  if (disclosedKeywordId !== id && !keywordsVisible) {
+    // Reveal first; recursion-free: render then promote to edit.
+    disclosedKeywordId = id;
+  }
+  editingKeywordId = id;
+  renderKeywords();
+  const li = findRowLi(id);
+  const input = li?.querySelector<HTMLInputElement>('input[name="keyword-value"]');
+  if (input) {
+    input.focus();
+    input.select();
+  }
+}
+
+// Commit the in-progress edit before the row is hidden or replaced. Returns
+// false when validation should keep the current edit UI active.
+async function commitPendingEdit(options: PendingEditOptions = {}): Promise<boolean> {
+  const reportInvalid = options.reportInvalid ?? true;
+  const id = editingKeywordId;
+  if (id === null) return true;
+  const li = findRowLi(id);
+  const input = li?.querySelector<HTMLInputElement>('input[name="keyword-value"]');
+  const kw = settings.keywords.find((k) => k.id === id);
+  if (!input || !kw) {
+    editingKeywordId = null;
+    return true;
+  }
+  const value = input.value.trim();
+  if (value.length === 0 || value === kw.value) {
+    editingKeywordId = null;
+    return true;
+  }
+  const next = updateKeywordValue(settings, id, value);
+  if (next === settings) {
+    if (reportInvalid) {
+      showKeywordError(t("keywordInvalid"), input);
+      input.focus();
+      input.select();
+      return false;
+    }
+    editingKeywordId = null;
+    return true;
+  }
+  editingKeywordId = null;
+  const ok = await commit(next, false);
+  if (ok) clearKeywordError();
+  return ok;
+}
+
+// Exit edit mode while staying disclosed. Swaps the input for a value button
+// in place — no full re-render — so a sibling click that triggered the blur
+// (switch / delete) can complete naturally without losing its target DOM.
+async function finishEdit(save: boolean): Promise<void> {
+  const id = editingKeywordId;
+  if (id === null) return;
+  const li = findRowLi(id);
+  const input = li?.querySelector<HTMLInputElement>('input[name="keyword-value"]');
+  const kw = settings.keywords.find((k) => k.id === id);
+  if (!input || !kw) {
+    editingKeywordId = null;
     return;
   }
 
-  keywordEditActive = true;
-  editingKeywordId = id;
-  beginKeywordEdit(
-    button,
-    (newValue) => {
-      const next = updateKeywordValue(settings, id, newValue);
-      if (next === settings) {
-        showKeywordError(t("keywordInvalid"));
-        return Promise.resolve(false);
+  const value = input.value.trim();
+  let resolvedKw = kw;
+  let valueAccepted = true;
+
+  if (save && value.length > 0 && value !== kw.value) {
+    const next = updateKeywordValue(settings, id, value);
+    if (next === settings) {
+      showKeywordError(t("keywordInvalid"), input);
+      valueAccepted = false;
+    } else {
+      editingKeywordId = null;
+      const ok = await commit(next, false);
+      if (ok) {
+        clearKeywordError();
+        resolvedKw = next.keywords.find((k) => k.id === id) ?? kw;
+      } else {
+        editingKeywordId = id;
+        valueAccepted = false;
       }
-      return commit(next).then((ok) => {
-        if (ok) clearKeywordError();
-        return ok;
-      });
-    },
-    {
-      inputLabel: t("keywordEditInputLabel"),
-      errorId: "kwError",
-      initialValue: keyword.value,
-      restoreValue: keywordsVisible ? undefined : HIDDEN_KEYWORD_TEXT,
-      onFinish: () => {
-        keywordEditActive = false;
-        editingKeywordId = null;
-        if (hideKeywordsAfterEdit) hideKeywords();
-        else if (!keywordsVisible) renderKeywords();
-      },
-    },
-  );
+    }
+  } else {
+    editingKeywordId = null;
+  }
+
+  if (!valueAccepted) {
+    // Stay in edit mode so the user can fix the value.
+    input.focus();
+    input.select();
+    return;
+  }
+
+  if (input.isConnected) {
+    input.replaceWith(makeValueButton(resolvedKw));
+  }
 }
 
 function renderCleanup(): void {
@@ -384,8 +524,15 @@ function chooseImportMode(count: number, existing: number): Promise<ImportMode> 
 }
 
 function wireImportExport(): void {
-  els.kwPrivacyToggle.addEventListener("click", () => {
-    keywordsVisible = !keywordsVisible;
+  els.kwPrivacyToggle.addEventListener("click", async () => {
+    const nextVisible = !keywordsVisible;
+    if (!nextVisible) {
+      const ok = await commitPendingEdit();
+      if (!ok) return;
+      disclosedKeywordId = null;
+      editingKeywordId = null;
+    }
+    keywordsVisible = nextVisible;
     renderKeywords();
   });
 
@@ -459,9 +606,28 @@ async function init(): Promise<void> {
   wireCleanupInputs();
   wireKeywordForm();
   wireImportExport();
-  window.addEventListener("blur", hideKeywords);
+  window.addEventListener("blur", () => {
+    void hideKeywords({ force: true });
+  });
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden") hideKeywords();
+    if (document.visibilityState === "hidden") void hideKeywords({ force: true });
+  });
+  // Click outside the disclosed row → hide it. Use `click` (not mousedown) so
+  // the row's own click handlers run first: clicking another row's masked
+  // button hides A and reveals B in a single click, because B's handler calls
+  // discloseRow(B) before this listener sees the event. (mousedown would
+  // re-render between mousedown and click, leaving B's button detached and
+  // its click handler effectively unreachable.)
+  document.addEventListener("click", async (e) => {
+    if (disclosedKeywordId === null) return;
+    if (!(e.target instanceof Element)) return;
+    const row = e.target.closest<HTMLLIElement>("li");
+    if (row?.dataset.keywordId === disclosedKeywordId) return;
+    const ok = await commitPendingEdit();
+    if (!ok) return;
+    disclosedKeywordId = null;
+    editingKeywordId = null;
+    renderKeywords();
   });
 
   cleanBtn = attachCleanButton({

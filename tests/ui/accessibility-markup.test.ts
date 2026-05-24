@@ -57,7 +57,7 @@ describe("static accessibility markup", () => {
     expect(readProjectFile("public/_locales/en/messages.json")).not.toContain(
       "cfgOlderThanDaysLabel",
     );
-    expect(readProjectFile("src/ui/options/editable-keyword.ts")).not.toContain('"Keyword value"');
+    expect(readProjectFile("src/ui/options/options.ts")).not.toContain('"Keyword value"');
   });
 
   it("connects import dialog title and description", () => {

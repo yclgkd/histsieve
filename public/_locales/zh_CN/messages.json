@@ -32,7 +32,6 @@
   "phKeyword": { "message": "例如：youtube.com" },
   "keywordInputLabel": { "message": "关键词" },
   "btnAdd": { "message": "添加" },
-  "btnDelete": { "message": "删除" },
   "btnExport": { "message": "导出" },
   "btnImport": { "message": "导入" },
   "btnShowKeywords": { "message": "显示关键词" },
@@ -44,6 +43,7 @@
     "message": "还没有关键词 —— 在上方添加第一个吧。例如 youtube.com、reddit.com，或任何你不想留在历史里的词。"
   },
   "hintClickToEdit": { "message": "点击编辑" },
+  "hintClickToReveal": { "message": "点击显示" },
   "keywordDuplicate": { "message": "关键词已存在。" },
   "keywordInvalid": { "message": "关键词长度需为 1-200 个字符。" },
   "keywordToggleLabel": {
@@ -58,7 +58,7 @@
       "KEYWORD": { "content": "$1", "example": "youtube.com" }
     }
   },
-  "keywordHiddenEditLabel": { "message": "编辑隐藏关键词" },
+  "keywordHiddenRevealLabel": { "message": "显示隐藏关键词" },
   "keywordDeleteLabel": {
     "message": "删除关键词：$KEYWORD$",
     "placeholders": {
