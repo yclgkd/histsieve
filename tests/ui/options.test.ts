@@ -17,8 +17,11 @@ const messages: Record<string, string> = {
   hintClickToEdit: "Click to edit",
   keywordToggleLabel: "Enable keyword: $1$",
   keywordEditLabel: "Edit keyword: $1$",
+  keywordHiddenEditLabel: "Edit hidden keyword",
   keywordDeleteLabel: "Delete keyword: $1$",
   keywordEditInputLabel: "Keyword value",
+  btnShowKeywords: "Show keywords",
+  btnHideKeywords: "Hide keywords",
   btnDelete: "Delete",
   keywordDuplicate: "Keyword already exists.",
   keywordInvalid: "Keyword must be 1-200 characters.",
@@ -70,6 +73,7 @@ function setupDom(): void {
     <button id="cleanNow" type="button"></button>
     <form id="kwForm"><input id="kwInput" /><button type="submit">Add</button></form>
     <p id="kwError"></p>
+    <button id="kwPrivacyToggle" type="button"></button>
     <button id="kwExport" type="button"></button>
     <button id="kwImport" type="button"></button>
     <input id="kwImportFile" type="file" />
@@ -108,6 +112,7 @@ async function loadOptions(initial: Settings): Promise<{
 }
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.resetModules();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
@@ -138,12 +143,22 @@ function stubImportMode(mode: "merge" | "replace"): void {
 const exportFile = (keywords: { value: string; enabled: boolean }[]): string =>
   JSON.stringify({ type: "histsieve.keywords", version: 1, keywords });
 
+function clickAfterPotentialInputBlur(control: HTMLElement, input: HTMLInputElement): void {
+  const down = new MouseEvent("mousedown", { bubbles: true, cancelable: true });
+  control.dispatchEvent(down);
+  if (!down.defaultPrevented) {
+    input.dispatchEvent(new FocusEvent("blur", { bubbles: false, relatedTarget: control }));
+  }
+  control.click();
+}
+
 describe("options page", () => {
   it("rerenders immediately after deleting a keyword saved by this page", async () => {
     setupChrome();
     setupDom();
     const { saveSettings } = await loadOptions(baseSettings());
 
+    document.querySelector<HTMLButtonElement>("#kwPrivacyToggle")!.click();
     document.querySelector<HTMLButtonElement>("#kwList li button.danger")!.click();
 
     await vi.waitFor(() => expect(document.querySelectorAll("#kwList li")).toHaveLength(1));
@@ -158,6 +173,7 @@ describe("options page", () => {
     setupDom();
     await loadOptions(baseSettings());
 
+    document.querySelector<HTMLButtonElement>("#kwPrivacyToggle")!.click();
     document.querySelector<HTMLInputElement>("#kwList li input[type='checkbox']")!.click();
 
     await vi.waitFor(() => expect(document.querySelector("#activeKwCount")!.textContent).toBe("1"));
@@ -169,6 +185,8 @@ describe("options page", () => {
     setupDom();
     await loadOptions(baseSettings());
 
+    document.querySelector<HTMLButtonElement>("#kwPrivacyToggle")!.click();
+
     const firstRow = document.querySelector<HTMLLIElement>("#kwList li")!;
     expect(firstRow.querySelector<HTMLInputElement>("input[type='checkbox']")!.ariaLabel).toBe(
       "Enable keyword: youtube.com",
@@ -179,6 +197,268 @@ describe("options page", () => {
     expect(firstRow.querySelector<HTMLButtonElement>("button.danger")!.ariaLabel).toBe(
       "Delete keyword: youtube.com",
     );
+  });
+
+  it("hides keyword values by default until they are revealed", async () => {
+    setupChrome();
+    setupDom();
+    await loadOptions(baseSettings());
+
+    const toggle = document.querySelector<HTMLButtonElement>("#kwPrivacyToggle")!;
+    const keywordValues = () =>
+      Array.from(document.querySelectorAll<HTMLButtonElement>("#kwList li .keyword-value")).map(
+        (button) => button.textContent,
+      );
+
+    expect(keywordValues()).toEqual(["••••••", "••••••"]);
+    expect(toggle.textContent).toBe("Show keywords");
+    expect(toggle.getAttribute("aria-pressed")).toBe("false");
+    expect(document.querySelector<HTMLButtonElement>("#kwList li .keyword-value")!.ariaLabel).toBe(
+      "Edit hidden keyword",
+    );
+    expect(document.querySelector("#kwList li input[type='checkbox']")).toBeNull();
+    expect(document.querySelector("#kwList li button.danger")).toBeNull();
+
+    toggle.click();
+
+    await vi.waitFor(() => expect(keywordValues()).toEqual(["youtube.com", "github.com"]));
+    expect(toggle.textContent).toBe("Hide keywords");
+    expect(toggle.getAttribute("aria-pressed")).toBe("true");
+
+    toggle.click();
+
+    await vi.waitFor(() => expect(keywordValues()).toEqual(["••••••", "••••••"]));
+    expect(toggle.textContent).toBe("Show keywords");
+    expect(toggle.getAttribute("aria-pressed")).toBe("false");
+  });
+
+  it("hides keyword management controls until keywords are revealed", async () => {
+    setupChrome();
+    setupDom();
+    const { saveSettings } = await loadOptions(baseSettings());
+
+    const firstRow = document.querySelector<HTMLLIElement>("#kwList li")!;
+    expect(firstRow.querySelector("input[type='checkbox']")).toBeNull();
+    expect(firstRow.querySelector("button.danger")).toBeNull();
+
+    expect(saveSettings).not.toHaveBeenCalled();
+
+    document.querySelector<HTMLButtonElement>("#kwPrivacyToggle")!.click();
+
+    await vi.waitFor(() =>
+      expect(document.querySelector("#kwList li input[type='checkbox']")).not.toBeNull(),
+    );
+    const revealedRow = document.querySelector<HTMLLIElement>("#kwList li")!;
+    expect(revealedRow.querySelector<HTMLInputElement>("input[type='checkbox']")!.disabled).toBe(
+      false,
+    );
+    expect(revealedRow.querySelector<HTMLButtonElement>("button.danger")!.disabled).toBe(false);
+  });
+
+  it("shows management controls for the hidden keyword being edited", async () => {
+    setupChrome();
+    setupDom();
+    await loadOptions(baseSettings());
+
+    document.querySelector<HTMLButtonElement>("#kwList li .keyword-value")!.click();
+
+    const rows = document.querySelectorAll<HTMLLIElement>("#kwList li");
+    const firstRow = rows[0]!;
+    const secondRow = rows[1]!;
+    expect(firstRow.querySelector<HTMLInputElement>("input[name='keyword-value']")!.value).toBe(
+      "youtube.com",
+    );
+    expect(firstRow.querySelector<HTMLInputElement>("input[type='checkbox']")!.ariaLabel).toBe(
+      "Enable keyword: youtube.com",
+    );
+    expect(firstRow.querySelector<HTMLButtonElement>("button.danger")!.ariaLabel).toBe(
+      "Delete keyword: youtube.com",
+    );
+    expect(secondRow.querySelector("input[type='checkbox']")).toBeNull();
+    expect(secondRow.querySelector("button.danger")).toBeNull();
+  });
+
+  it("toggles the hidden keyword being edited", async () => {
+    setupChrome();
+    setupDom();
+    const { saveSettings } = await loadOptions(baseSettings());
+
+    document.querySelector<HTMLButtonElement>("#kwList li .keyword-value")!.click();
+    const input = document.querySelector<HTMLInputElement>(
+      "#kwList li input[name='keyword-value']",
+    )!;
+    const checkbox = document.querySelector<HTMLInputElement>("#kwList li input[type='checkbox']")!;
+
+    clickAfterPotentialInputBlur(checkbox, input);
+
+    await vi.waitFor(() =>
+      expect(saveSettings.mock.calls.at(-1)![0].keywords[0].enabled).toBe(false),
+    );
+  });
+
+  it("keeps the edit input active when toggling the hidden keyword being edited", async () => {
+    setupChrome();
+    setupDom();
+    const { saveSettings } = await loadOptions(baseSettings());
+
+    document.querySelector<HTMLButtonElement>("#kwList li .keyword-value")!.click();
+    const input = document.querySelector<HTMLInputElement>(
+      "#kwList li input[name='keyword-value']",
+    )!;
+    input.value = "draft.example";
+    const checkbox = document.querySelector<HTMLInputElement>("#kwList li input[type='checkbox']")!;
+
+    clickAfterPotentialInputBlur(checkbox, input);
+
+    await vi.waitFor(() => expect(saveSettings).toHaveBeenCalled());
+    expect(input.isConnected).toBe(true);
+    expect(input.value).toBe("draft.example");
+  });
+
+  it("deletes the hidden keyword being edited", async () => {
+    setupChrome();
+    setupDom();
+    const { saveSettings } = await loadOptions(baseSettings());
+
+    document.querySelector<HTMLButtonElement>("#kwList li .keyword-value")!.click();
+    const input = document.querySelector<HTMLInputElement>(
+      "#kwList li input[name='keyword-value']",
+    )!;
+    const deleteButton = document.querySelector<HTMLButtonElement>("#kwList li button.danger")!;
+
+    clickAfterPotentialInputBlur(deleteButton, input);
+
+    await vi.waitFor(() => expect(document.querySelectorAll("#kwList li")).toHaveLength(1));
+    expect(
+      saveSettings.mock.calls.at(-1)![0].keywords.map((k: { value: string }) => k.value),
+    ).toEqual(["github.com"]);
+  });
+
+  it("edits the real keyword value while keywords are hidden", async () => {
+    setupChrome();
+    setupDom();
+    const { saveSettings } = await loadOptions(baseSettings());
+
+    document.querySelector<HTMLButtonElement>("#kwList li .keyword-value")!.click();
+    const input = document.querySelector<HTMLInputElement>(
+      "#kwList li input[name='keyword-value']",
+    )!;
+    expect(input.value).toBe("youtube.com");
+
+    input.value = "yt.example";
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+
+    await vi.waitFor(() =>
+      expect(saveSettings.mock.calls.at(-1)![0].keywords[0].value).toBe("yt.example"),
+    );
+    await vi.waitFor(() =>
+      expect(
+        document.querySelector<HTMLButtonElement>("#kwList li .keyword-value")!.textContent,
+      ).toBe("••••••"),
+    );
+  });
+
+  it("keeps revealed keywords visible while the page remains active", async () => {
+    setupChrome();
+    setupDom();
+    await loadOptions(baseSettings());
+    vi.useFakeTimers();
+
+    const toggle = document.querySelector<HTMLButtonElement>("#kwPrivacyToggle")!;
+    const keywordValues = () =>
+      Array.from(document.querySelectorAll<HTMLButtonElement>("#kwList li .keyword-value")).map(
+        (button) => button.textContent,
+      );
+
+    toggle.click();
+    expect(keywordValues()).toEqual(["youtube.com", "github.com"]);
+
+    vi.advanceTimersByTime(60_000);
+
+    expect(keywordValues()).toEqual(["youtube.com", "github.com"]);
+    expect(toggle.textContent).toBe("Hide keywords");
+    expect(toggle.getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("does not hide revealed keywords while a keyword edit is active", async () => {
+    setupChrome();
+    setupDom();
+    await loadOptions(baseSettings());
+    vi.useFakeTimers();
+
+    document.querySelector<HTMLButtonElement>("#kwPrivacyToggle")!.click();
+    document.querySelector<HTMLButtonElement>("#kwList li .keyword-value")!.click();
+    const input = document.querySelector<HTMLInputElement>(
+      "#kwList li input[name='keyword-value']",
+    )!;
+    input.value = "unfinished.example";
+    expect(input.isConnected).toBe(true);
+
+    vi.advanceTimersByTime(60_000);
+
+    expect(input.isConnected).toBe(true);
+    expect(input.value).toBe("unfinished.example");
+    expect(document.querySelector<HTMLButtonElement>("#kwPrivacyToggle")!.textContent).toBe(
+      "Hide keywords",
+    );
+  });
+
+  it("hides revealed keywords after an edit completes when hiding was requested", async () => {
+    setupChrome();
+    setupDom();
+    const { saveSettings } = await loadOptions(baseSettings());
+
+    document.querySelector<HTMLButtonElement>("#kwPrivacyToggle")!.click();
+    document.querySelector<HTMLButtonElement>("#kwList li .keyword-value")!.click();
+    const input = document.querySelector<HTMLInputElement>(
+      "#kwList li input[name='keyword-value']",
+    )!;
+    input.value = "yt.example";
+
+    window.dispatchEvent(new Event("blur"));
+    expect(input.isConnected).toBe(true);
+
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+
+    await vi.waitFor(() =>
+      expect(saveSettings.mock.calls.at(-1)![0].keywords[0].value).toBe("yt.example"),
+    );
+    await vi.waitFor(() =>
+      expect(document.querySelector<HTMLButtonElement>("#kwPrivacyToggle")!.textContent).toBe(
+        "Show keywords",
+      ),
+    );
+    expect(
+      document.querySelector<HTMLButtonElement>("#kwList li .keyword-value")!.textContent,
+    ).toBe("••••••");
+  });
+
+  it("hides a single disclosed edit row after blur-requested editing completes", async () => {
+    setupChrome();
+    setupDom();
+    const { saveSettings } = await loadOptions(baseSettings());
+
+    document.querySelector<HTMLButtonElement>("#kwList li .keyword-value")!.click();
+    const input = document.querySelector<HTMLInputElement>(
+      "#kwList li input[name='keyword-value']",
+    )!;
+    input.value = "yt.example";
+
+    window.dispatchEvent(new Event("blur"));
+    expect(input.isConnected).toBe(true);
+
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+
+    await vi.waitFor(() =>
+      expect(saveSettings.mock.calls.at(-1)![0].keywords[0].value).toBe("yt.example"),
+    );
+    await vi.waitFor(() =>
+      expect(
+        document.querySelector<HTMLButtonElement>("#kwList li .keyword-value")!.textContent,
+      ).toBe("••••••"),
+    );
+    expect(document.querySelector("#kwList li input[type='checkbox']")).toBeNull();
+    expect(document.querySelector("#kwList li button.danger")).toBeNull();
   });
 
   it("edits a keyword through a keyboard-reachable button", async () => {

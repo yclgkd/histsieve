@@ -86,4 +86,12 @@ describe("static accessibility markup", () => {
       expect(css).toContain("@media (prefers-reduced-motion: reduce)");
     }
   });
+
+  it("does not style keyword values like links on hover", () => {
+    const optionsCss = readProjectFile("src/ui/options/options.css");
+
+    expect(optionsCss).not.toMatch(
+      /\.kw-list\s+\.keyword-value:hover\s*\{[^}]*color:\s*var\(--primary\)/,
+    );
+  });
 });

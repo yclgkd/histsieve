@@ -3,6 +3,9 @@ export type KeywordEditCommit = (value: string) => Promise<boolean>;
 export type KeywordEditOptions = {
   inputLabel: string;
   errorId?: string;
+  initialValue?: string;
+  restoreValue?: string;
+  onFinish?: () => void;
 };
 
 export function beginKeywordEdit(
@@ -10,7 +13,7 @@ export function beginKeywordEdit(
   commitValue: KeywordEditCommit,
   opts: KeywordEditOptions,
 ): void {
-  const original = button.textContent ?? "";
+  const original = opts.initialValue ?? button.textContent ?? "";
   const input = document.createElement("input");
   input.type = "text";
   input.name = "keyword-value";
@@ -29,10 +32,11 @@ export function beginKeywordEdit(
   let finished = false;
 
   const restoreButton = (value: string): void => {
-    button.textContent = value;
+    button.textContent = opts.restoreValue ?? value;
     input.removeEventListener("blur", onBlur);
     input.removeEventListener("keydown", onKeydown);
     if (input.isConnected) input.replaceWith(button);
+    opts.onFinish?.();
   };
 
   const finish = async (shouldCommit: boolean): Promise<void> => {

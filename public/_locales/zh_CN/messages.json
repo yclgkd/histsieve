@@ -35,6 +35,8 @@
   "btnDelete": { "message": "删除" },
   "btnExport": { "message": "导出" },
   "btnImport": { "message": "导入" },
+  "btnShowKeywords": { "message": "显示关键词" },
+  "btnHideKeywords": { "message": "隐藏关键词" },
   "btnCancel": { "message": "取消" },
   "btnImportMerge": { "message": "合并" },
   "btnImportReplace": { "message": "替换" },
@@ -56,6 +58,7 @@
       "KEYWORD": { "content": "$1", "example": "youtube.com" }
     }
   },
+  "keywordHiddenEditLabel": { "message": "编辑隐藏关键词" },
   "keywordDeleteLabel": {
     "message": "删除关键词：$KEYWORD$",
     "placeholders": {

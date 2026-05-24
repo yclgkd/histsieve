@@ -35,6 +35,8 @@
   "btnDelete": { "message": "Delete" },
   "btnExport": { "message": "Export" },
   "btnImport": { "message": "Import" },
+  "btnShowKeywords": { "message": "Show keywords" },
+  "btnHideKeywords": { "message": "Hide keywords" },
   "btnCancel": { "message": "Cancel" },
   "btnImportMerge": { "message": "Merge" },
   "btnImportReplace": { "message": "Replace" },
@@ -56,6 +58,7 @@
       "KEYWORD": { "content": "$1", "example": "youtube.com" }
     }
   },
+  "keywordHiddenEditLabel": { "message": "Edit hidden keyword" },
   "keywordDeleteLabel": {
     "message": "Delete keyword: $KEYWORD$",
     "placeholders": {

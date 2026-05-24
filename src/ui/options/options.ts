@@ -35,6 +35,7 @@ type Els = {
   saveStatusText: HTMLElement;
   kwInput: HTMLInputElement;
   kwError: HTMLElement;
+  kwPrivacyToggle: HTMLButtonElement;
   kwList: HTMLUListElement;
   kwEmpty: HTMLParagraphElement;
   activeKwCount: HTMLElement;
@@ -44,8 +45,13 @@ let settings: Settings;
 let cleanBtn: CleanButtonHandle | null = null;
 let els: Els;
 let lastWrittenJson: string | null = null;
+let keywordsVisible = false;
+let keywordEditActive = false;
+let editingKeywordId: string | null = null;
+let hideKeywordsAfterEdit = false;
 
 let savedHideTimer: number | null = null;
+const HIDDEN_KEYWORD_TEXT = "••••••";
 
 function showToast(message: string, variant: "success" | "error" = "success", ms = 1800): void {
   els.saveStatusText.textContent = message;
@@ -82,14 +88,25 @@ function renderAll(): void {
   cleanBtn?.refresh();
 }
 
-async function commit(next: Settings): Promise<boolean> {
+function hideKeywords(): void {
+  if (!keywordsVisible) return;
+  if (keywordEditActive) {
+    hideKeywordsAfterEdit = true;
+    return;
+  }
+  keywordsVisible = false;
+  hideKeywordsAfterEdit = false;
+  renderKeywords();
+}
+
+async function commit(next: Settings, render = true): Promise<boolean> {
   const previous = settings;
   const nextJson = JSON.stringify(next);
   settings = next;
   try {
     lastWrittenJson = nextJson;
     await saveSettings(next);
-    renderAll();
+    if (render) renderAll();
     showSaved();
     return true;
   } catch (err) {
@@ -104,6 +121,7 @@ async function commit(next: Settings): Promise<boolean> {
 
 function renderKeywords(): void {
   els.activeKwCount.textContent = String(settings.keywords.filter((k) => k.enabled).length);
+  renderKeywordPrivacyToggle();
 
   els.kwList.replaceChildren();
   if (settings.keywords.length === 0) {
@@ -117,48 +135,110 @@ function renderKeywords(): void {
   }
 }
 
+function isKeywordDisclosed(kw: Keyword): boolean {
+  return keywordsVisible || editingKeywordId === kw.id;
+}
+
+function keepKeywordEditActiveOnMouseDown(e: MouseEvent, id: string): void {
+  if (keywordEditActive && editingKeywordId === id) e.preventDefault();
+}
+
 function renderKeywordRow(kw: Keyword): HTMLLIElement {
   const li = document.createElement("li");
   if (!kw.enabled) li.classList.add("disabled");
+  const disclosed = isKeywordDisclosed(kw);
+  if (!disclosed) li.classList.add("masked");
 
-  const toggle = document.createElement("label");
-  toggle.className = "switch";
-  const checkbox = document.createElement("input");
-  checkbox.type = "checkbox";
-  checkbox.checked = kw.enabled;
-  checkbox.setAttribute("aria-label", t("keywordToggleLabel", [kw.value]));
-  const slider = document.createElement("span");
-  slider.className = "slider";
-  toggle.append(checkbox, slider);
-  checkbox.addEventListener("change", async () => {
-    await commit(setKeywordEnabled(settings, kw.id, checkbox.checked));
-  });
-  li.appendChild(toggle);
+  if (disclosed) {
+    const toggle = document.createElement("label");
+    toggle.className = "switch";
+    toggle.addEventListener("mousedown", (e) => keepKeywordEditActiveOnMouseDown(e, kw.id));
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = kw.enabled;
+    checkbox.setAttribute("aria-label", t("keywordToggleLabel", [kw.value]));
+    const slider = document.createElement("span");
+    slider.className = "slider";
+    toggle.append(checkbox, slider);
+    checkbox.addEventListener("change", async () => {
+      const next = setKeywordEnabled(settings, kw.id, checkbox.checked);
+      if (keywordEditActive && editingKeywordId === kw.id) {
+        if (await commit(next, false)) {
+          li.classList.toggle("disabled", !checkbox.checked);
+          els.activeKwCount.textContent = String(settings.keywords.filter((k) => k.enabled).length);
+        }
+        return;
+      }
+      await commit(next);
+    });
+    li.appendChild(toggle);
+  }
 
   const value = document.createElement("button");
   value.type = "button";
   value.className = "keyword-value";
-  value.textContent = kw.value;
+  value.dataset.keywordId = kw.id;
+  value.textContent = disclosed ? kw.value : HIDDEN_KEYWORD_TEXT;
   value.title = t("hintClickToEdit");
-  value.setAttribute("aria-label", t("keywordEditLabel", [kw.value]));
+  value.setAttribute(
+    "aria-label",
+    disclosed ? t("keywordEditLabel", [kw.value]) : t("keywordHiddenEditLabel"),
+  );
   value.addEventListener("click", () => beginEdit(value, kw.id));
   li.appendChild(value);
 
-  const del = document.createElement("button");
-  del.className = "icon-btn danger";
-  del.type = "button";
-  del.textContent = t("btnDelete");
-  del.setAttribute("aria-label", t("keywordDeleteLabel", [kw.value]));
-  del.addEventListener("click", async () => {
-    await commit(removeKeyword(settings, kw.id));
-  });
-  li.appendChild(del);
+  if (disclosed) {
+    const del = document.createElement("button");
+    del.className = "icon-btn danger";
+    del.type = "button";
+    del.addEventListener("mousedown", (e) => keepKeywordEditActiveOnMouseDown(e, kw.id));
+    del.textContent = t("btnDelete");
+    del.setAttribute("aria-label", t("keywordDeleteLabel", [kw.value]));
+    del.addEventListener("click", async () => {
+      if (editingKeywordId === kw.id) {
+        keywordEditActive = false;
+        editingKeywordId = null;
+        hideKeywordsAfterEdit = false;
+      }
+      await commit(removeKeyword(settings, kw.id));
+    });
+    li.appendChild(del);
+  }
 
   return li;
 }
 
+function renderKeywordPrivacyToggle(): void {
+  if (settings.keywords.length === 0) {
+    keywordsVisible = false;
+    editingKeywordId = null;
+    keywordEditActive = false;
+  } else if (editingKeywordId && !settings.keywords.some((kw) => kw.id === editingKeywordId)) {
+    editingKeywordId = null;
+    keywordEditActive = false;
+  }
+  els.kwPrivacyToggle.textContent = t(keywordsVisible ? "btnHideKeywords" : "btnShowKeywords");
+  els.kwPrivacyToggle.setAttribute("aria-pressed", String(keywordsVisible));
+  els.kwPrivacyToggle.disabled = settings.keywords.length === 0;
+}
+
 function beginEdit(button: HTMLButtonElement, id: string): void {
   clearKeywordError();
+  const keyword = settings.keywords.find((k) => k.id === id);
+  if (!keyword) return;
+
+  if (!keywordsVisible && editingKeywordId !== id) {
+    editingKeywordId = id;
+    renderKeywords();
+    const nextButton = Array.from(
+      els.kwList.querySelectorAll<HTMLButtonElement>(".keyword-value"),
+    ).find((candidate) => candidate.dataset.keywordId === id);
+    if (nextButton) beginEdit(nextButton, id);
+    return;
+  }
+
+  keywordEditActive = true;
+  editingKeywordId = id;
   beginKeywordEdit(
     button,
     (newValue) => {
@@ -172,7 +252,18 @@ function beginEdit(button: HTMLButtonElement, id: string): void {
         return ok;
       });
     },
-    { inputLabel: t("keywordEditInputLabel"), errorId: "kwError" },
+    {
+      inputLabel: t("keywordEditInputLabel"),
+      errorId: "kwError",
+      initialValue: keyword.value,
+      restoreValue: keywordsVisible ? undefined : HIDDEN_KEYWORD_TEXT,
+      onFinish: () => {
+        keywordEditActive = false;
+        editingKeywordId = null;
+        if (hideKeywordsAfterEdit) hideKeywords();
+        else if (!keywordsVisible) renderKeywords();
+      },
+    },
   );
 }
 
@@ -293,6 +384,11 @@ function chooseImportMode(count: number, existing: number): Promise<ImportMode> 
 }
 
 function wireImportExport(): void {
+  els.kwPrivacyToggle.addEventListener("click", () => {
+    keywordsVisible = !keywordsVisible;
+    renderKeywords();
+  });
+
   $<HTMLButtonElement>("#kwExport").addEventListener("click", () => {
     downloadKeywordsExport();
   });
@@ -345,6 +441,7 @@ function cacheEls(): Els {
     saveStatusText: $<HTMLElement>("#saveStatusText"),
     kwInput: $<HTMLInputElement>("#kwInput"),
     kwError: $<HTMLElement>("#kwError"),
+    kwPrivacyToggle: $<HTMLButtonElement>("#kwPrivacyToggle"),
     kwList: $<HTMLUListElement>("#kwList"),
     kwEmpty: $<HTMLParagraphElement>("#kwEmpty"),
     activeKwCount: $<HTMLElement>("#activeKwCount"),
@@ -362,6 +459,10 @@ async function init(): Promise<void> {
   wireCleanupInputs();
   wireKeywordForm();
   wireImportExport();
+  window.addEventListener("blur", hideKeywords);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") hideKeywords();
+  });
 
   cleanBtn = attachCleanButton({
     button: $<HTMLButtonElement>("#cleanNow"),
