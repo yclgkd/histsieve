@@ -8,6 +8,7 @@ const sourceDir = join(root, "store-assets", "source");
 const assetDir = join(root, "store-assets");
 const iconSourcePath = join(root, "src", "ui", "icons", "icon.svg");
 
+const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
 const optionsCss = readFileSync(join(root, "src", "ui", "options", "options.css"), "utf8");
 const popupCss = readFileSync(join(root, "src", "ui", "popup", "popup.css"), "utf8");
 
@@ -142,6 +143,20 @@ function escapeSrcDoc(html) {
   return html.replaceAll("&", "&amp;").replaceAll('"', "&quot;");
 }
 
+function hiddenKeywordRow() {
+  return `
+          <li class="masked">
+            <button
+              type="button"
+              class="keyword-value"
+              title="Click to reveal"
+              aria-label="Reveal hidden keyword"
+            >
+              ••••••
+            </button>
+          </li>`;
+}
+
 function optionsDocument({ frame = false } = {}) {
   const frameCss = frame
     ? `
@@ -150,8 +165,9 @@ function optionsDocument({ frame = false } = {}) {
     `
     : `
       body { width: 1280px; min-height: 800px; overflow: hidden; }
-      .page { margin-top: 24px; zoom: .88; }
+      .page { margin-top: 22px; zoom: .78; }
     `;
+  const keywordRows = Array.from({ length: 4 }, hiddenKeywordRow).join("");
 
   return `<!doctype html>
 <html lang="en">
@@ -175,7 +191,7 @@ ${frameCss}
           </div>
         </div>
         <label class="enable-toggle">
-          <span class="enable-toggle__label">Enable HistSieve</span>
+          <span class="enable-toggle__label">Enable</span>
           <span class="switch">
             <input type="checkbox" checked />
             <span class="slider"></span>
@@ -210,12 +226,14 @@ ${frameCss}
 
         <fieldset class="scope">
           <legend>History to delete</legend>
-          <label class="row">
-            <input type="radio" name="scope" checked />
-            <span>History older than</span>
+          <div class="row">
+            <label class="inline-control">
+              <input type="radio" name="scope" checked />
+              <span>History older than</span>
+            </label>
             <input type="number" value="30" />
             <span>days</span>
-          </label>
+          </div>
           <label class="row">
             <input type="radio" name="scope" />
             <span>All browser history</span>
@@ -229,6 +247,9 @@ ${frameCss}
         <div class="card__header">
           <h2>Keyword rules</h2>
           <div class="kw-io">
+            <button id="kwPrivacyToggle" type="button" class="icon-btn" aria-pressed="false">
+              Show keywords
+            </button>
             <button type="button" class="icon-btn">Import</button>
             <button type="button" class="icon-btn">Export</button>
           </div>
@@ -242,30 +263,31 @@ ${frameCss}
           <input type="text" placeholder="e.g. youtube.com" />
           <button type="button" class="primary">Add</button>
         </form>
+        <p class="field-error" role="status" aria-live="polite"></p>
 
         <ul class="kw-list" aria-label="Keyword rules">
-          <li>
-            <label class="switch"><input type="checkbox" checked /><span class="slider"></span></label>
-            <span class="value">youtube.com</span>
-            <button type="button" class="icon-btn danger">Delete</button>
-          </li>
-          <li>
-            <label class="switch"><input type="checkbox" checked /><span class="slider"></span></label>
-            <span class="value">reddit.com</span>
-            <button type="button" class="icon-btn danger">Delete</button>
-          </li>
-          <li>
-            <label class="switch"><input type="checkbox" checked /><span class="slider"></span></label>
-            <span class="value">shopping</span>
-            <button type="button" class="icon-btn danger">Delete</button>
-          </li>
-          <li class="disabled">
-            <label class="switch"><input type="checkbox" /><span class="slider"></span></label>
-            <span class="value">temporary</span>
-            <button type="button" class="icon-btn danger">Delete</button>
-          </li>
+${keywordRows}
         </ul>
       </section>
+
+      <footer class="page__footer">
+        <span class="page__footer-version">HistSieve v${pkg.version}</span>
+        <span class="page__footer-sep">·</span>
+        <a
+          class="page__footer-link"
+          href="https://github.com/yclgkd/histsieve"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d="M8 0a8 8 0 0 0-2.53 15.59c.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.43 7.43 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.19 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8a8 8 0 0 0-8-8z"
+            />
+          </svg>
+          <span>View on GitHub</span>
+        </a>
+      </footer>
     </main>
   </body>
 </html>`;
@@ -298,7 +320,7 @@ ${popupCss}
 
       <section class="popup__status">
         <div class="row">
-          <span class="label">Keywords</span>
+          <span class="label">Active keywords</span>
           <span class="value">4</span>
         </div>
         <div class="row">
