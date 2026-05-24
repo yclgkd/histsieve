@@ -26,6 +26,7 @@ const staleSourceFiles = [
   "promo-small-440x280.html",
   "screenshot-options-1280x800.html",
   "screenshot-popup-1280x800.html",
+  "screenshot-readme-1280x800.html",
 ];
 
 function ensureDir(path) {
@@ -157,7 +158,24 @@ function hiddenKeywordRow() {
           </li>`;
 }
 
-function optionsDocument({ frame = false } = {}) {
+const trashIconSvg = `<svg class="trash-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>`;
+
+function visibleKeywordRow(value) {
+  const label = `Delete keyword ${value}`;
+  return `
+          <li>
+            <label class="switch">
+              <input type="checkbox" checked />
+              <span class="slider"></span>
+            </label>
+            <button type="button" class="keyword-value">${value}</button>
+            <button type="button" class="icon-btn danger" title="${label}" aria-label="${label}">${trashIconSvg}</button>
+          </li>`;
+}
+
+const sampleKeywords = ["youtube.com", "amazon.com", "reddit.com", "shopping"];
+
+function optionsDocument({ frame = false, reveal = false } = {}) {
   const frameCss = frame
     ? `
       body { width: 760px; min-height: 740px; overflow: hidden; }
@@ -167,7 +185,11 @@ function optionsDocument({ frame = false } = {}) {
       body { width: 1280px; min-height: 800px; overflow: hidden; }
       .page { margin-top: 22px; zoom: .78; }
     `;
-  const keywordRows = Array.from({ length: 4 }, hiddenKeywordRow).join("");
+  const keywordRows = reveal
+    ? sampleKeywords.map(visibleKeywordRow).join("")
+    : Array.from({ length: 4 }, hiddenKeywordRow).join("");
+  const privacyToggleLabel = reveal ? "Hide keywords" : "Show keywords";
+  const privacyTogglePressed = reveal ? "true" : "false";
 
   return `<!doctype html>
 <html lang="en">
@@ -247,8 +269,8 @@ ${frameCss}
         <div class="card__header">
           <h2>Keyword rules</h2>
           <div class="kw-io">
-            <button id="kwPrivacyToggle" type="button" class="icon-btn" aria-pressed="false">
-              Show keywords
+            <button id="kwPrivacyToggle" type="button" class="icon-btn" aria-pressed="${privacyTogglePressed}">
+              ${privacyToggleLabel}
             </button>
             <button type="button" class="icon-btn">Import</button>
             <button type="button" class="icon-btn">Export</button>
@@ -680,6 +702,13 @@ renderHtml(
   800,
   optionsDocument(),
   join(assetDir, "screenshot-options-1280x800.png"),
+);
+renderHtml(
+  "screenshot-readme-1280x800",
+  1280,
+  800,
+  optionsDocument({ reveal: true }),
+  join(assetDir, "screenshot-readme-1280x800.png"),
 );
 renderHtml(
   "screenshot-popup-1280x800",

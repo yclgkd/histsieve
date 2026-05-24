@@ -2,7 +2,7 @@
 
 HistSieve is a Chrome extension for cleaning browser history from rules you control.
 
-![HistSieve settings page](./store-assets/screenshot-options-1280x800.png)
+![HistSieve settings page](./store-assets/screenshot-readme-1280x800.png)
 
 ## Features
 
