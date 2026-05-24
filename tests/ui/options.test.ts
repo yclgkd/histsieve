@@ -15,8 +15,13 @@ const messages: Record<string, string> = {
   statusSaved: "Saved",
   statusSaveFailed: "Save failed.",
   hintClickToEdit: "Click to edit",
+  keywordToggleLabel: "Enable keyword: $1$",
+  keywordEditLabel: "Edit keyword: $1$",
+  keywordDeleteLabel: "Delete keyword: $1$",
+  keywordEditInputLabel: "Keyword value",
   btnDelete: "Delete",
   keywordDuplicate: "Keyword already exists.",
+  keywordInvalid: "Keyword must be 1-200 characters.",
   importEmpty: "No valid keywords found in file.",
   importError: "Import failed: invalid file format.",
   importDoneMerge: "Imported $1$, skipped $2$.",
@@ -64,6 +69,7 @@ function setupDom(): void {
     <span id="activeKwCount"></span>
     <button id="cleanNow" type="button"></button>
     <form id="kwForm"><input id="kwInput" /><button type="submit">Add</button></form>
+    <p id="kwError"></p>
     <button id="kwExport" type="button"></button>
     <button id="kwImport" type="button"></button>
     <input id="kwImportFile" type="file" />
@@ -158,6 +164,40 @@ describe("options page", () => {
     expect(document.querySelector("#kwList li")!.classList.contains("disabled")).toBe(true);
   });
 
+  it("renders keyword controls with accessible names", async () => {
+    setupChrome();
+    setupDom();
+    await loadOptions(baseSettings());
+
+    const firstRow = document.querySelector<HTMLLIElement>("#kwList li")!;
+    expect(firstRow.querySelector<HTMLInputElement>("input[type='checkbox']")!.ariaLabel).toBe(
+      "Enable keyword: youtube.com",
+    );
+    expect(firstRow.querySelector<HTMLButtonElement>(".keyword-value")!.ariaLabel).toBe(
+      "Edit keyword: youtube.com",
+    );
+    expect(firstRow.querySelector<HTMLButtonElement>("button.danger")!.ariaLabel).toBe(
+      "Delete keyword: youtube.com",
+    );
+  });
+
+  it("edits a keyword through a keyboard-reachable button", async () => {
+    setupChrome();
+    setupDom();
+    const { saveSettings } = await loadOptions(baseSettings());
+
+    document.querySelector<HTMLButtonElement>("#kwList li .keyword-value")!.click();
+    const input = document.querySelector<HTMLInputElement>(
+      "#kwList li input[name='keyword-value']",
+    )!;
+    input.value = "gitlab.com";
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+
+    await vi.waitFor(() =>
+      expect(saveSettings.mock.calls.at(-1)![0].keywords[0].value).toBe("gitlab.com"),
+    );
+  });
+
   it("adds a new keyword from the form and rejects duplicates", async () => {
     setupChrome();
     setupDom();
@@ -179,7 +219,52 @@ describe("options page", () => {
         "Keyword already exists.",
       ),
     );
+    expect(input.getAttribute("aria-invalid")).toBe("true");
+    expect(input.getAttribute("aria-errormessage")).toBe("kwError");
+    expect(document.querySelector("#kwError")!.textContent).toBe("Keyword already exists.");
     expect(saveSettings).toHaveBeenCalledTimes(1);
+  });
+
+  it("clears keyword input errors after a valid keyword is added", async () => {
+    setupChrome();
+    setupDom();
+    await loadOptions(baseSettings());
+    const input = document.querySelector<HTMLInputElement>("#kwInput")!;
+    const form = document.querySelector<HTMLFormElement>("#kwForm")!;
+
+    input.value = "YOUTUBE.com";
+    form.dispatchEvent(new SubmitEvent("submit", { bubbles: true, cancelable: true }));
+    await vi.waitFor(() =>
+      expect(document.querySelector("#kwError")!.textContent).toBe("Keyword already exists."),
+    );
+
+    input.value = "twitter.com";
+    form.dispatchEvent(new SubmitEvent("submit", { bubbles: true, cancelable: true }));
+
+    await vi.waitFor(() => expect(input.getAttribute("aria-invalid")).toBe("false"));
+    expect(document.querySelector("#kwError")!.textContent).toBe("");
+  });
+
+  it("announces invalid keyword edits through the shared keyword error", async () => {
+    setupChrome();
+    setupDom();
+    const { saveSettings } = await loadOptions(baseSettings());
+
+    document.querySelector<HTMLButtonElement>("#kwList li .keyword-value")!.click();
+    const input = document.querySelector<HTMLInputElement>(
+      "#kwList li input[name='keyword-value']",
+    )!;
+    input.value = "github.com";
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+
+    await vi.waitFor(() =>
+      expect(document.querySelector("#kwError")!.textContent).toBe(
+        "Keyword must be 1-200 characters.",
+      ),
+    );
+    expect(input.getAttribute("aria-invalid")).toBe("true");
+    expect(input.getAttribute("aria-errormessage")).toBe("kwError");
+    expect(saveSettings).not.toHaveBeenCalled();
   });
 
   it("rerenders cleanup inputs after sanitized values are saved", async () => {

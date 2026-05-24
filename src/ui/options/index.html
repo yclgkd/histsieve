@@ -19,7 +19,7 @@
         <label class="enable-toggle" data-i18n-title="popupToggleEnabled">
           <span class="enable-toggle__label" data-i18n="lblEnableToggle">Enable HistSieve</span>
           <span class="switch">
-            <input id="enabled" type="checkbox" />
+            <input id="enabled" name="enabled" type="checkbox" />
             <span class="slider"></span>
           </span>
         </label>
@@ -35,29 +35,49 @@
         </div>
 
         <label class="row">
-          <input id="intervalEnabled" type="checkbox" />
+          <input id="intervalEnabled" name="interval-enabled" type="checkbox" />
           <span data-i18n="cfgIntervalEnabled">Run on a schedule</span>
         </label>
 
         <label class="row sub">
-          <span data-i18n="cfgIntervalHours">Every</span>
-          <input id="intervalHours" type="number" min="1" max="720" step="1" />
-          <span data-i18n="cfgHours">hours</span>
+          <span id="intervalHoursPrefix" data-i18n="cfgIntervalHours">Every</span>
+          <input
+            id="intervalHours"
+            name="interval-hours"
+            type="number"
+            min="1"
+            max="720"
+            step="1"
+            inputmode="numeric"
+            aria-labelledby="intervalHoursPrefix intervalHoursSuffix"
+          />
+          <span id="intervalHoursSuffix" data-i18n="cfgHours">hours</span>
         </label>
 
         <label class="row">
-          <input id="onStartup" type="checkbox" />
+          <input id="onStartup" name="on-startup" type="checkbox" />
           <span data-i18n="cfgOnStartup">Run when the browser starts</span>
         </label>
 
         <fieldset class="scope">
           <legend data-i18n="cfgScope">Cleanup scope</legend>
-          <label class="row">
-            <input type="radio" name="scope" value="olderThan" />
-            <span data-i18n="cfgScopeOlder">Only entries older than</span>
-            <input id="olderThanDays" type="number" min="1" max="3650" step="1" />
-            <span data-i18n="cfgDays">days</span>
-          </label>
+          <div class="row">
+            <label class="inline-control">
+              <input type="radio" name="scope" value="olderThan" />
+              <span id="olderThanDaysPrefix" data-i18n="cfgScopeOlder">Only entries older than</span>
+            </label>
+            <input
+              id="olderThanDays"
+              name="older-than-days"
+              type="number"
+              min="1"
+              max="3650"
+              step="1"
+              inputmode="numeric"
+              aria-labelledby="olderThanDaysPrefix olderThanDaysSuffix"
+            />
+            <span id="olderThanDaysSuffix" data-i18n="cfgDays">days</span>
+          </div>
           <label class="row">
             <input type="radio" name="scope" value="all" />
             <span data-i18n="cfgScopeAll">All history</span>
@@ -76,15 +96,21 @@
             <input id="kwImportFile" type="file" accept="application/json,.json" hidden />
           </div>
         </div>
-        <p class="hint" data-i18n="hintKeywords">
+        <p id="kwHint" class="hint" data-i18n="hintKeywords">
           When a visited URL or page title contains any active keyword, the entry is removed from
           your browser history immediately. Matching is case-insensitive.
         </p>
 
         <form id="kwForm" class="kw-form">
+          <label class="sr-only" for="kwInput" data-i18n="keywordInputLabel">Keyword</label>
           <input
             id="kwInput"
+            name="keyword"
             type="text"
+            autocomplete="off"
+            spellcheck="false"
+            aria-describedby="kwHint kwError"
+            aria-errormessage="kwError"
             data-i18n-placeholder="phKeyword"
             placeholder="e.g. youtube.com"
             maxlength="200"
@@ -92,6 +118,7 @@
           />
           <button type="submit" class="primary" data-i18n="btnAdd">Add</button>
         </form>
+        <p id="kwError" class="field-error" role="status" aria-live="polite"></p>
 
         <ul id="kwList" class="kw-list" aria-live="polite"></ul>
         <p id="kwEmpty" class="empty hidden" data-i18n="kwEmpty">No keywords yet.</p>
@@ -123,9 +150,14 @@
         <span id="saveStatusText"></span>
       </div>
 
-      <dialog id="importModeDialog" class="modal">
+      <dialog
+        id="importModeDialog"
+        class="modal"
+        aria-labelledby="importModeTitle"
+        aria-describedby="importModeMessage"
+      >
         <form method="dialog" class="modal__panel">
-          <h2 data-i18n="importModeTitle">Import keywords</h2>
+          <h2 id="importModeTitle" data-i18n="importModeTitle">Import keywords</h2>
           <p id="importModeMessage" class="modal__message"></p>
           <div class="modal__actions">
             <button type="submit" value="cancel" class="icon-btn" data-i18n="btnCancel">

@@ -1,6 +1,7 @@
 import {
   addKeyword,
   exportKeywords,
+  isValidKeywordValue,
   mergeKeywords,
   parseKeywordsExport,
   removeKeyword,
@@ -32,6 +33,8 @@ type Els = {
   lastClean: HTMLSpanElement;
   saveStatus: HTMLElement;
   saveStatusText: HTMLElement;
+  kwInput: HTMLInputElement;
+  kwError: HTMLElement;
   kwList: HTMLUListElement;
   kwEmpty: HTMLParagraphElement;
   activeKwCount: HTMLElement;
@@ -57,6 +60,20 @@ function showToast(message: string, variant: "success" | "error" = "success", ms
 
 function showSaved(): void {
   showToast(t("statusSaved"), "success", 1200);
+}
+
+function clearKeywordError(): void {
+  els.kwError.textContent = "";
+  els.kwInput.setAttribute("aria-invalid", "false");
+}
+
+function showKeywordError(message: string, input?: HTMLInputElement): void {
+  els.kwError.textContent = message;
+  if (input) {
+    input.setAttribute("aria-invalid", "true");
+    input.setAttribute("aria-errormessage", "kwError");
+  }
+  showToast(message, "error");
 }
 
 function renderAll(): void {
@@ -109,6 +126,7 @@ function renderKeywordRow(kw: Keyword): HTMLLIElement {
   const checkbox = document.createElement("input");
   checkbox.type = "checkbox";
   checkbox.checked = kw.enabled;
+  checkbox.setAttribute("aria-label", t("keywordToggleLabel", [kw.value]));
   const slider = document.createElement("span");
   slider.className = "slider";
   toggle.append(checkbox, slider);
@@ -117,16 +135,20 @@ function renderKeywordRow(kw: Keyword): HTMLLIElement {
   });
   li.appendChild(toggle);
 
-  const value = document.createElement("span");
-  value.className = "value";
+  const value = document.createElement("button");
+  value.type = "button";
+  value.className = "keyword-value";
   value.textContent = kw.value;
   value.title = t("hintClickToEdit");
+  value.setAttribute("aria-label", t("keywordEditLabel", [kw.value]));
   value.addEventListener("click", () => beginEdit(value, kw.id));
   li.appendChild(value);
 
   const del = document.createElement("button");
   del.className = "icon-btn danger";
+  del.type = "button";
   del.textContent = t("btnDelete");
+  del.setAttribute("aria-label", t("keywordDeleteLabel", [kw.value]));
   del.addEventListener("click", async () => {
     await commit(removeKeyword(settings, kw.id));
   });
@@ -135,15 +157,23 @@ function renderKeywordRow(kw: Keyword): HTMLLIElement {
   return li;
 }
 
-function beginEdit(span: HTMLSpanElement, id: string): void {
-  beginKeywordEdit(span, (newValue) => {
-    const next = updateKeywordValue(settings, id, newValue);
-    if (next === settings) {
-      showToast(t("keywordInvalid"), "error");
-      return Promise.resolve(false);
-    }
-    return commit(next);
-  });
+function beginEdit(button: HTMLButtonElement, id: string): void {
+  clearKeywordError();
+  beginKeywordEdit(
+    button,
+    (newValue) => {
+      const next = updateKeywordValue(settings, id, newValue);
+      if (next === settings) {
+        showKeywordError(t("keywordInvalid"));
+        return Promise.resolve(false);
+      }
+      return commit(next).then((ok) => {
+        if (ok) clearKeywordError();
+        return ok;
+      });
+    },
+    { inputLabel: t("keywordEditInputLabel"), errorId: "kwError" },
+  );
 }
 
 function renderCleanup(): void {
@@ -281,19 +311,24 @@ function wireImportExport(): void {
 
 function wireKeywordForm(): void {
   const form = $<HTMLFormElement>("#kwForm");
-  const input = $<HTMLInputElement>("#kwInput");
+  const input = els.kwInput;
+  input.addEventListener("input", clearKeywordError);
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const value = input.value.trim();
     if (value.length === 0) return;
+    if (!isValidKeywordValue(value)) {
+      showKeywordError(t("keywordInvalid"), input);
+      return;
+    }
     const next = addKeyword(settings, value);
     if (next === settings) {
-      showToast(t("keywordDuplicate"), "error");
-      input.value = "";
+      showKeywordError(t("keywordDuplicate"), input);
       return;
     }
     if (await commit(next)) {
       input.value = "";
+      clearKeywordError();
     }
   });
 }
@@ -308,6 +343,8 @@ function cacheEls(): Els {
     lastClean: $<HTMLSpanElement>("#lastClean"),
     saveStatus: $<HTMLElement>("#saveStatus"),
     saveStatusText: $<HTMLElement>("#saveStatusText"),
+    kwInput: $<HTMLInputElement>("#kwInput"),
+    kwError: $<HTMLElement>("#kwError"),
     kwList: $<HTMLUListElement>("#kwList"),
     kwEmpty: $<HTMLParagraphElement>("#kwEmpty"),
     activeKwCount: $<HTMLElement>("#activeKwCount"),

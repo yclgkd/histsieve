@@ -308,3 +308,21 @@ input:focus-visible {
 .switch input:checked + .slider:before {
   transform: translateX(16px);
 }
+.switch input:focus-visible + .slider {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primary.confirming,
+  .primary.success {
+    animation: none;
+  }
+
+  .primary,
+  .ghost,
+  .slider,
+  .slider:before {
+    transition-duration: 0.01ms;
+  }
+}

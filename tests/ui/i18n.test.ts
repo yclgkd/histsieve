@@ -81,4 +81,17 @@ describe("applyI18n", () => {
     applyI18n();
     expect(document.querySelector("span")!.textContent).toBe("untouched");
   });
+
+  it("sets aria-label for data-i18n-aria-label", () => {
+    document.body.innerHTML = `<button data-i18n-aria-label="deleteTip"></button>`;
+    installChrome({ deleteTip: "Delete keyword" });
+    applyI18n();
+    expect(document.querySelector("button")!.getAttribute("aria-label")).toBe("Delete keyword");
+  });
+
+  it("syncs the document language with the Chrome UI locale", () => {
+    installChromeWithLocale("zh-CN");
+    applyI18n();
+    expect(document.documentElement.lang).toBe("zh-CN");
+  });
 });

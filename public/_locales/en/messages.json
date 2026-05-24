@@ -30,6 +30,7 @@
     "message": "When a visited URL or page title contains any active keyword, the entry is removed from your browser history immediately. Matching is case-insensitive."
   },
   "phKeyword": { "message": "e.g. youtube.com" },
+  "keywordInputLabel": { "message": "Keyword" },
   "btnAdd": { "message": "Add" },
   "btnDelete": { "message": "Delete" },
   "btnExport": { "message": "Export" },
@@ -43,6 +44,25 @@
   "hintClickToEdit": { "message": "Click to edit" },
   "keywordDuplicate": { "message": "Keyword already exists." },
   "keywordInvalid": { "message": "Keyword must be 1-200 characters." },
+  "keywordToggleLabel": {
+    "message": "Enable keyword: $KEYWORD$",
+    "placeholders": {
+      "KEYWORD": { "content": "$1", "example": "youtube.com" }
+    }
+  },
+  "keywordEditLabel": {
+    "message": "Edit keyword: $KEYWORD$",
+    "placeholders": {
+      "KEYWORD": { "content": "$1", "example": "youtube.com" }
+    }
+  },
+  "keywordDeleteLabel": {
+    "message": "Delete keyword: $KEYWORD$",
+    "placeholders": {
+      "KEYWORD": { "content": "$1", "example": "youtube.com" }
+    }
+  },
+  "keywordEditInputLabel": { "message": "Keyword value" },
 
   "importModeTitle": { "message": "Import keywords" },
   "importModeMessage": {

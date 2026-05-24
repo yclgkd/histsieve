@@ -1,50 +1,77 @@
 export type KeywordEditCommit = (value: string) => Promise<boolean>;
 
-export function beginKeywordEdit(span: HTMLSpanElement, commitValue: KeywordEditCommit): void {
-  if (span.contentEditable === "true") return;
+export type KeywordEditOptions = {
+  inputLabel: string;
+  errorId?: string;
+};
 
-  const original = span.textContent ?? "";
-  span.contentEditable = "true";
-  span.focus();
-  selectContents(span);
+export function beginKeywordEdit(
+  button: HTMLButtonElement,
+  commitValue: KeywordEditCommit,
+  opts: KeywordEditOptions,
+): void {
+  const original = button.textContent ?? "";
+  const input = document.createElement("input");
+  input.type = "text";
+  input.name = "keyword-value";
+  input.autocomplete = "off";
+  input.spellcheck = false;
+  input.maxLength = 200;
+  input.className = "keyword-edit";
+  input.value = original;
+  input.setAttribute("aria-label", opts.inputLabel);
+  if (opts.errorId) input.setAttribute("aria-describedby", opts.errorId);
+
+  button.replaceWith(input);
+  input.focus();
+  input.select();
 
   let finished = false;
 
-  const finish = async (): Promise<void> => {
+  const restoreButton = (value: string): void => {
+    button.textContent = value;
+    input.removeEventListener("blur", onBlur);
+    input.removeEventListener("keydown", onKeydown);
+    if (input.isConnected) input.replaceWith(button);
+  };
+
+  const finish = async (shouldCommit: boolean): Promise<void> => {
     if (finished) return;
     finished = true;
-    span.removeEventListener("keydown", onKeydown);
-    span.contentEditable = "false";
+    input.removeEventListener("keydown", onKeydown);
 
-    const newValue = (span.textContent ?? "").trim();
-    if (newValue.length === 0 || newValue === original) {
-      span.textContent = original;
+    const newValue = input.value.trim();
+    if (!shouldCommit || newValue.length === 0 || newValue === original) {
+      restoreButton(original);
       return;
     }
 
     const committed = await commitValue(newValue);
-    if (!committed) span.textContent = original;
+    if (!committed) {
+      input.setAttribute("aria-invalid", "true");
+      if (opts.errorId) input.setAttribute("aria-errormessage", opts.errorId);
+      finished = false;
+      input.addEventListener("keydown", onKeydown);
+      return;
+    }
+
+    restoreButton(newValue);
   };
 
   const onKeydown = (e: KeyboardEvent): void => {
     if (e.key === "Enter") {
       e.preventDefault();
-      span.blur();
+      void finish(true);
     } else if (e.key === "Escape") {
       e.preventDefault();
-      span.textContent = original;
-      span.blur();
+      void finish(false);
     }
   };
 
-  span.addEventListener("blur", () => void finish(), { once: true });
-  span.addEventListener("keydown", onKeydown);
-}
+  const onBlur = (): void => {
+    void finish(true);
+  };
 
-function selectContents(span: HTMLSpanElement): void {
-  const range = document.createRange();
-  range.selectNodeContents(span);
-  const sel = window.getSelection();
-  sel?.removeAllRanges();
-  sel?.addRange(range);
+  input.addEventListener("blur", onBlur);
+  input.addEventListener("keydown", onKeydown);
 }

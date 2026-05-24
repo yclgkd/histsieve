@@ -30,6 +30,7 @@
     "message": "当访问的网址或页面标题包含任一生效关键词时，立即从浏览器历史中删除该记录。匹配不区分大小写。"
   },
   "phKeyword": { "message": "例如：youtube.com" },
+  "keywordInputLabel": { "message": "关键词" },
   "btnAdd": { "message": "添加" },
   "btnDelete": { "message": "删除" },
   "btnExport": { "message": "导出" },
@@ -43,6 +44,25 @@
   "hintClickToEdit": { "message": "点击编辑" },
   "keywordDuplicate": { "message": "关键词已存在。" },
   "keywordInvalid": { "message": "关键词长度需为 1-200 个字符。" },
+  "keywordToggleLabel": {
+    "message": "启用关键词：$KEYWORD$",
+    "placeholders": {
+      "KEYWORD": { "content": "$1", "example": "youtube.com" }
+    }
+  },
+  "keywordEditLabel": {
+    "message": "编辑关键词：$KEYWORD$",
+    "placeholders": {
+      "KEYWORD": { "content": "$1", "example": "youtube.com" }
+    }
+  },
+  "keywordDeleteLabel": {
+    "message": "删除关键词：$KEYWORD$",
+    "placeholders": {
+      "KEYWORD": { "content": "$1", "example": "youtube.com" }
+    }
+  },
+  "keywordEditInputLabel": { "message": "关键词内容" },
 
   "importModeTitle": { "message": "导入关键词" },
   "importModeMessage": {

@@ -9,6 +9,10 @@ export function getUILocale(): string {
 }
 
 export function applyI18n(root: ParentNode = document): void {
+  if (root === document) {
+    document.documentElement.lang = getUILocale();
+  }
+
   const nodes = root.querySelectorAll<HTMLElement>("[data-i18n]");
   for (const node of nodes) {
     const key = node.dataset.i18n;
@@ -20,6 +24,12 @@ export function applyI18n(root: ParentNode = document): void {
     const key = node.dataset.i18nTitle;
     if (!key) continue;
     node.title = t(key);
+  }
+  const ariaLabelNodes = root.querySelectorAll<HTMLElement>("[data-i18n-aria-label]");
+  for (const node of ariaLabelNodes) {
+    const key = node.dataset.i18nAriaLabel;
+    if (!key) continue;
+    node.setAttribute("aria-label", t(key));
   }
   const phNodes = root.querySelectorAll<HTMLInputElement>("[data-i18n-placeholder]");
   for (const node of phNodes) {

@@ -54,6 +54,17 @@ input {
   font: inherit;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 button:focus-visible,
 input:focus-visible {
   outline: 3px solid var(--focus);
@@ -184,6 +195,14 @@ input:focus-visible {
   line-height: 1.55;
 }
 
+.field-error {
+  min-height: 18px;
+  margin: -6px 0 0;
+  color: var(--danger);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
 .kw-form {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -236,20 +255,34 @@ input:focus-visible {
   background: var(--surface-muted);
 }
 
-.kw-list .value {
+.kw-list .keyword-value,
+.kw-list .keyword-edit {
   flex: 1;
   min-width: 0;
-  padding: 4px 0;
   overflow-wrap: anywhere;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 13px;
   line-height: 1.45;
 }
 
-.kw-list .value[contenteditable="true"] {
+.kw-list .keyword-value {
+  padding: 4px 0;
+  color: var(--fg);
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  text-align: left;
+  cursor: text;
+}
+
+.kw-list .keyword-value:hover {
+  color: var(--primary);
+}
+
+.kw-list .keyword-edit {
   padding: 4px 6px;
-  outline: 2px solid var(--primary);
-  outline-offset: 1px;
+  color: var(--fg);
+  border: 1px solid var(--primary);
   border-radius: 6px;
   background: var(--surface);
 }
@@ -312,6 +345,12 @@ input:focus-visible {
 
 .row.sub {
   margin-left: 26px;
+}
+
+.inline-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .row input[type="checkbox"],
@@ -592,6 +631,28 @@ input:focus-visible {
 }
 .switch input:checked + .slider:before {
   transform: translateX(16px);
+}
+.switch input:focus-visible + .slider {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primary.confirming,
+  .primary.success {
+    animation: none;
+  }
+
+  .kw-form input[type="text"],
+  .row input[type="number"],
+  .icon-btn,
+  .primary,
+  .page__footer-link,
+  .save-toast,
+  .slider,
+  .slider:before {
+    transition-duration: 0.01ms;
+  }
 }
 
 @media (max-width: 680px) {
